@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { jobs } from '@/content';
 import { ResumeDocument } from './ResumeDocument';
 
@@ -46,7 +46,19 @@ describe('ResumeDocument', () => {
 
   it('группирует навыки по категориям', () => {
     render(<ResumeDocument now="2026-08" />);
-    expect(screen.getByRole('heading', { name: 'Картография' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Тестирование' })).toBeInTheDocument();
+
+    const geoHeading = screen.getByRole('heading', { name: 'Картография' });
+    const geoGroup = geoHeading.closest('.skills__group');
+    expect(geoGroup).not.toBeNull();
+    expect(within(geoGroup as HTMLElement).getByText('MapLibre')).toBeInTheDocument();
+    expect(within(geoGroup as HTMLElement).queryByText('Jest')).not.toBeInTheDocument();
+
+    const testingHeading = screen.getByRole('heading', { name: 'Тестирование' });
+    const testingGroup = testingHeading.closest('.skills__group');
+    expect(testingGroup).not.toBeNull();
+    expect(within(testingGroup as HTMLElement).getByText('Jest')).toBeInTheDocument();
+    expect(
+      within(testingGroup as HTMLElement).queryByText('MapLibre'),
+    ).not.toBeInTheDocument();
   });
 });
