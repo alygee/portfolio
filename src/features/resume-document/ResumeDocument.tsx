@@ -13,9 +13,14 @@ export function ResumeDocument({ now = currentMonthIso() }: { now?: string } = {
       <header className="resume__header">
         <h1>Альберт Аллагулов</h1>
         <p className="resume__role">Senior Frontend Developer</p>
+        {/*
+          Единая строка, а не смешение текста и {experience}: React
+          иначе вставляет между соседними текстовыми узлами HTML-комментарий
+          — маркер для гидрации, — который в SSR-разметке ломает
+          сплошной текст «Опыт — N лет» на две части.
+        */}
         <p className="resume__lead">
-          React, TypeScript, highload, UI-архитектура. Опыт — {experience}.
-          Казань, удалённая работа.
+          {`React, TypeScript, highload, UI-архитектура. Опыт — ${experience}. Казань, удалённая работа.`}
         </p>
         <ul className="resume__contacts">
           <li>
