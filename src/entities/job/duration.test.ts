@@ -82,4 +82,24 @@ describe('totalExperienceMonths', () => {
     expect(totalExperienceMonths(jobs, NOW)).toBe(117);
     expect(formatMonths(totalExperienceMonths(jobs, NOW))).toBe('9 лет 9 месяцев');
   });
+
+  it('периоды соприкасаются, но не перекрываются', () => {
+    const touching = [
+      { start: '2020-01', end: '2020-03' },
+      { start: '2020-04', end: '2020-06' },
+    ];
+    expect(totalExperienceMonths(touching, NOW)).toBe(6);
+  });
+
+  it('разрыв ровно в один месяц', () => {
+    const gapOneMonth = [
+      { start: '2020-01', end: '2020-03' },
+      { start: '2020-05', end: '2020-06' },
+    ];
+    expect(totalExperienceMonths(gapOneMonth, NOW)).toBe(5);
+  });
+
+  it('пустой список периодов', () => {
+    expect(totalExperienceMonths([], NOW)).toBe(0);
+  });
 });
