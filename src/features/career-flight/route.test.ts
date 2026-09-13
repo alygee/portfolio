@@ -1,5 +1,6 @@
 import { jobs } from '@/content';
 import {
+  LOOK_AHEAD,
   activeStationIndex,
   cameraWaypoint,
   progressToCamera,
@@ -46,6 +47,20 @@ describe('stationProgress', () => {
   it('не делится на ноль при единственной станции', () => {
     expect(stationProgress(0, 1)).toBe(0);
   });
+
+  it('камера останавливается рядом со станцией в её прогрессе', () => {
+    // stationProgress — приближение, равномерное по индексу, а не по длине
+    // дуги. Этот тест не проверяет формулу, а закрепляет инвариант, важный
+    // для следующих задач: камера должна оказываться достаточно близко к
+    // путевой точке каждой станции, когда прогресс равен stationProgress
+    // этой станции. Если геометрия маршрута изменится так, что камера
+    // перестанет останавливаться у станций, тест упадёт независимо от того,
+    // как именно вычисляется stationProgress.
+    for (let i = 0; i < COUNT; i += 1) {
+      const { position } = progressToCamera(stationProgress(i, COUNT));
+      expect(position.distanceTo(cameraWaypoint(i))).toBeLessThan(0.5);
+    }
+  });
 });
 
 describe('activeStationIndex', () => {
@@ -82,11 +97,14 @@ describe('progressToCamera', () => {
   });
 
   it('смотрит вперёд по ходу движения, в том числе в самом конце', () => {
+    // Маршрут уходит в отрицательный Z, поэтому «смотреть вперёд» означает,
+    // что цель взгляда глубже позиции по Z. Проверка не зависит от способа
+    // вычисления target (в отличие от сравнения с getTangentAt, которое
+    // тавтологично: target строится именно через эту касательную).
     for (const t of [0, 0.5, 1]) {
       const { position, target } = progressToCamera(t);
-      const toTarget = target.clone().sub(position);
-      expect(toTarget.length()).toBeGreaterThan(0.5);
-      expect(toTarget.normalize().dot(route.getTangentAt(t === 1 ? 1 : t))).toBeGreaterThan(0.5);
+      expect(target.z).toBeLessThan(position.z);
+      expect(position.distanceTo(target)).toBeCloseTo(LOOK_AHEAD, 5);
     }
   });
 
