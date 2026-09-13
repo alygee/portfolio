@@ -114,8 +114,6 @@ export const jobs = [
       'react',
       'typescript',
       'vite',
-      'vitest',
-      'zustand',
       'chakra',
       'maplibre',
       'mapbox',

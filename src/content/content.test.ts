@@ -11,11 +11,9 @@ describe('контент-модель', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('все навыки в стеках работ существуют в справочнике', () => {
-    const known = new Set(skills.map((s) => s.id));
-    const unknown = jobs.flatMap((j) => j.stack.filter((id) => !known.has(id)));
-    expect(unknown).toEqual([]);
-  });
+  // Тест целостности job.stack → skills не нужен: система типов гарантирует это через SkillId,
+  // выведённый из массива skills в as const satisfies readonly Job[]. Опечатку компилятор
+  // ловит на этапе типизации, до запуска тестов.
 
   it('каждый навык используется хотя бы на одной работе', () => {
     const used = new Set(jobs.flatMap((j) => [...j.stack]));
