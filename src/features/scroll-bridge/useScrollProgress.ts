@@ -19,9 +19,16 @@ function readProgress(scrollTop: number): number {
 export function useScrollProgress(): void {
   useEffect(() => {
     const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+    // Инерционный скролл (Lenis) — это движение, а prefers-reduced-motion
+    // просит его не показывать. К тому же 3D-слой в этом режиме не
+    // монтируется вообще (см. useSceneEnabled), так что подмена физики
+    // скролла дала бы изменённое поведение страницы без единого визуального
+    // выигрыша — идём нативной веткой, как и на тач-устройствах.
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const useNativeScroll = coarsePointer || reducedMotion;
     setProgress(readProgress(window.scrollY));
 
-    if (coarsePointer) {
+    if (useNativeScroll) {
       const onScroll = () => setProgress(readProgress(window.scrollY));
       window.addEventListener('scroll', onScroll, { passive: true });
       window.addEventListener('resize', onScroll, { passive: true });
