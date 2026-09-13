@@ -9,7 +9,9 @@
     "build:ssr": "vite build --ssr --outDir dist-ssr",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check:size": "node scripts/check-bundle-size.mjs",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
@@ -22,6 +24,8 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
     "@react-three/test-renderer": "^9.1.1",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
