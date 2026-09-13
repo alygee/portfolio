@@ -1,5 +1,6 @@
 import ReactThreeTestRenderer from '@react-three/test-renderer';
 import { useThree } from '@react-three/fiber';
+import { Profiler, type ProfilerOnRenderCallback } from 'react';
 import type { Camera } from 'three';
 import { progressStore, setProgress } from '@/features/scroll-bridge/progressStore';
 import { CameraRig } from './CameraRig';
@@ -50,17 +51,40 @@ describe('CameraRig', () => {
     expect(getCamera().position.distanceTo(middle)).toBeLessThan(0.5);
   });
 
-  it('не вызывает ре-рендер React на изменение прогресса', async () => {
-    let renders = 0;
-    function CountingRig() {
-      renders += 1;
-      return <CameraRig />;
-    }
-    const renderer = await ReactThreeTestRenderer.create(<CountingRig />);
-    const before = renders;
+  it('читает прогресс императивно: не подписывается на progressStore', async () => {
+    // Любой React-биндинг zustand (useStore и родственные хуки) вызывает
+    // store.subscribe изнутри. Чтение через progressStore.getState() в
+    // useFrame — нет. Считать ре-рендеры компонента-обёртки здесь не годится:
+    // React не ре-рендерит родителя из-за подписки ребёнка, поэтому такая
+    // проверка проходит даже при нарушении требования.
+    const subscribeSpy = vi.spyOn(progressStore, 'subscribe');
+    await ReactThreeTestRenderer.create(<CameraRig />);
+
+    setProgress(0.3);
+    setProgress(0.6);
+
+    expect(subscribeSpy).not.toHaveBeenCalled();
+  });
+
+  it('не коммитится повторно в React на изменение прогресса', async () => {
+    // Прямая проверка требования «нет ре-рендера»: Profiler считает коммиты
+    // именно поддерева CameraRig, а не компонента-обёртки — так тест не
+    // зависит от того, каким механизмом могла бы возникнуть подписка.
+    let commits = 0;
+    const onRender: ProfilerOnRenderCallback = () => {
+      commits += 1;
+    };
+    const renderer = await ReactThreeTestRenderer.create(
+      <Profiler id="camera-rig" onRender={onRender}>
+        <CameraRig />
+      </Profiler>,
+    );
+    const before = commits;
+
     setProgress(0.3);
     setProgress(0.6);
     await renderer.advanceFrames(10, 0.016);
-    expect(renders).toBe(before);
+
+    expect(commits).toBe(before);
   });
 });
