@@ -6,4 +6,3 @@ test-results
 playwright-report
 .superpowers
 .DS_Store
-.playwright-cache

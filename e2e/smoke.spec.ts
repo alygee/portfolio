@@ -27,12 +27,40 @@ test('горизонтального скролла нет на узком эк�
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
-test('при prefers-reduced-motion канвас не монтируется', async ({ browser }) => {
+test('при prefers-reduced-motion канвас не монтируется и мост скролла не грузит lenis', async ({
+  browser,
+}) => {
+  // Грубая проверка (отсутствие канваса) не различает причину: в headless-CI
+  // без GPU канвас не смонтируется и без этого флага (detect-gpu вернёт
+  // низкий tier). Поэтому дополнительно проверяем наблюдаемый и
+  // GPU-независимый эффект именно prefers-reduced-motion: мост скролла
+  // (useScrollProgress) в этом режиме идёт нативной веткой и не должен
+  // запрашивать чанк lenis вообще.
   const context = await browser.newContext({ reducedMotion: 'reduce' });
   const page = await context.newPage();
+  const requestedUrls: string[] = [];
+  page.on('request', (request) => requestedUrls.push(request.url()));
   await page.goto('/');
   await page.waitForTimeout(1500);
   await expect(page.locator('canvas')).toHaveCount(0);
+  expect(requestedUrls.some((url) => url.includes('/assets/lenis-'))).toBe(false);
+  await context.close();
+});
+
+test('без prefers-reduced-motion мост скролла грузит чанк lenis', async ({ browser }) => {
+  // Симметричная пара к тесту выше: без неё проверка «lenis не грузится при
+  // reducedMotion» была бы тривиально зелёной, если бы lenis перестал
+  // подключаться вообще, независимо от флага. hasTouch/isMobile переопределены
+  // явно: в мобильном проекте (coarse pointer) мост скролла тоже идёт
+  // нативной веткой независимо от reducedMotion — здесь проверяется именно
+  // ветка с Lenis, поэтому указатель принудительно «точный».
+  const context = await browser.newContext({ hasTouch: false, isMobile: false });
+  const page = await context.newPage();
+  const requestedUrls: string[] = [];
+  page.on('request', (request) => requestedUrls.push(request.url()));
+  await page.goto('/');
+  await page.waitForTimeout(1500);
+  expect(requestedUrls.some((url) => url.includes('/assets/lenis-'))).toBe(true);
   await context.close();
 });
 
