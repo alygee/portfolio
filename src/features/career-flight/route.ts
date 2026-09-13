@@ -1,6 +1,12 @@
 import { CatmullRomCurve3, Vector3 } from 'three';
 import { jobs } from '@/content';
 import { clamp01 } from '@/shared/lib/math';
+import { activeStationIndex, stationProgress } from './routeProgress';
+
+// Реэкспорт: сама математика прогресса живёт в `routeProgress.ts`, у неё нет
+// зависимости на `three` — это важно для кода в главном чанке (см. комментарий
+// там). Здесь только ре-экспорт, чтобы импортёры `./route` не заметили разницы.
+export { activeStationIndex, stationProgress };
 
 /** Насколько далеко вперёд по маршруту смотрит камера. */
 export const LOOK_AHEAD = 8;
@@ -37,33 +43,6 @@ export function buildRoute(stationCount: number): CatmullRomCurve3 {
  * вызывай `buildRoute` и работай со своим экземпляром, а не правь этот.
  */
 export const route = buildRoute(jobs.length);
-
-/**
- * Прогресс станции — приближение, равномерное по **индексу** станции
- * (`i / (count - 1)`), а не по длине дуги маршрута. Камера же движется по
- * `route.getPointAt(t)`, то есть по arc-length параметризации. Это разные
- * параметризации, и в общем случае они не совпадают: путевые точки лежат на
- * кривой неэквидистантно из-за синусоидального смещения по X в
- * `cameraWaypoint`.
- *
- * Расхождение остаётся малым, потому что это смещение (амплитуда 3) мало по
- * сравнению с шагом между станциями (`STATION_SPACING` = 22) — путевые точки
- * почти эквидистантны. Поэтому здесь используется простая формула по
- * индексу, а не arc-length инверсия: она дешевле и не привязывает эту
- * чистую функцию к конкретной кривой. Гарантия, что камера всё равно
- * останавливается достаточно близко к каждой станции, зафиксирована тестом
- * «камера останавливается рядом со станцией в её прогрессе» в
- * `route.test.ts`.
- */
-export function stationProgress(index: number, count: number): number {
-  if (count <= 1) return 0;
-  return index / (count - 1);
-}
-
-export function activeStationIndex(t: number, count: number): number {
-  if (count <= 1) return 0;
-  return Math.round(clamp01(t) * (count - 1));
-}
 
 export function progressToCamera(t: number): { position: Vector3; target: Vector3 } {
   const clamped = clamp01(t);

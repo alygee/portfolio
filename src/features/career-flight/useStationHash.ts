@@ -1,7 +1,11 @@
 import { useEffect } from 'react';
 import { jobs } from '@/content';
 import { progressStore, setProgress } from '@/features/scroll-bridge/progressStore';
-import { activeStationIndex, stationProgress } from './route';
+// Именно `./routeProgress`, а не `./route`: этот хук зовётся из `App`
+// безусловно, в том числе когда сцена не смонтирована, то есть попадает в
+// главный чанк. `./route` тянет за собой `three` через модульный синглтон
+// `route` — этого чанк не должен видеть.
+import { activeStationIndex, stationProgress } from './routeProgress';
 import { hashToStationIndex, stationIndexToHash } from './stationHash';
 
 const IDS = jobs.map((job) => job.id);
