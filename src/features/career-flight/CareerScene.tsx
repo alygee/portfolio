@@ -1,4 +1,6 @@
+import { jobs } from '@/content';
 import { CameraRig } from './CameraRig';
+import { StationMarker } from './StationMarker';
 import { route } from './route';
 
 export function CareerScene() {
@@ -11,6 +13,9 @@ export function CareerScene() {
       <ambientLight intensity={0.4} />
       <directionalLight position={[12, 20, 8]} intensity={1.2} />
       <CameraRig />
+      {jobs.map((job, index) => (
+        <StationMarker job={job} index={index} key={job.id} />
+      ))}
       {/* Опорная сетка: на фазе 1 она делает движение камеры читаемым.
           Заменяется настоящим окружением на фазе 2. */}
       <gridHelper

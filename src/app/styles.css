@@ -41,3 +41,11 @@ a { color: var(--accent); }
   pointer-events: none;
 }
 main { position: relative; z-index: 1; }
+
+.station-label {
+  font: 600 14px/1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: .04em;
+  color: var(--fg);
+  white-space: nowrap;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, .8);
+}
