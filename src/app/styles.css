@@ -1,0 +1,33 @@
+:root {
+  color-scheme: dark;
+  --bg: #0d0f14;
+  --fg: #e8e6e1;
+  --muted: #8d8a84;
+  --accent: #7dd3c0;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+.resume { max-width: 46rem; margin: 0 auto; padding: 4rem 1.25rem; }
+h1 { font-size: clamp(2rem, 6vw, 3.25rem); line-height: 1.1; margin: 0; }
+h2 { margin: 3.5rem 0 1rem; font-size: 1.125rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+h3 { margin: 0 0 .25rem; font-size: 1.0625rem; }
+a { color: var(--accent); }
+.resume__role { margin: .5rem 0 0; color: var(--accent); }
+.resume__lead { color: var(--muted); }
+.resume__contacts, .job__meta { display: flex; flex-wrap: wrap; gap: 1rem; padding: 0; list-style: none; }
+.job { margin-bottom: 2.5rem; }
+.job__role { color: var(--muted); font-weight: 400; }
+.job__meta { font-size: .875rem; color: var(--muted); margin: .25rem 0 .75rem; }
+.job__duration::before { content: '· '; }
+.job__bullets { margin: 0; padding-left: 1.25rem; }
+.job__metrics { display: flex; flex-wrap: wrap; gap: 1.5rem; margin: 1rem 0 0; }
+.job__metrics dt { font-size: .8125rem; color: var(--muted); }
+.job__metrics dd { margin: 0; font-size: 1.25rem; color: var(--accent); }
+.skills { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
+.skills__group h3 { font-size: .8125rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.skills__group ul { margin: 0; padding-left: 1.25rem; }
