@@ -212,7 +212,8 @@ Lenis (или нативный скролл на мобильных)
 `useSceneEnabled()` возвращает `false` и канвас не монтируется, если:
 
 - WebGL недоступен;
-- выставлено `prefers-reduced-motion: reduce`;
+- выставлено `prefers-reduced-motion: reduce`.
+
 Класс видеокарты в решении не участвует. Так было не всегда: прежде здесь
 работал `detect-gpu` с порогом tier ≥ 2, и он отсекал исправные машины — Intel
 Alder Lake GT2 под Mesa он сопоставлял с Coffee Lake Iris Plus 655 и оценивал в

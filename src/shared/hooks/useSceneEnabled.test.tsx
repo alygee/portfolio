@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { useSceneEnabled } from './useSceneEnabled';
 
 function mockMatchMedia(reducedMotion: boolean) {
@@ -39,10 +39,17 @@ describe('useSceneEnabled', () => {
     expect(result.current).toBe(false);
   });
 
-  it('не обращается к сети при принятии решения', () => {
+  it('не обращается к сети при принятии решения', async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);
     renderHook(() => useSceneEnabled());
+    // Макротаска, а не просто Promise.resolve(): гейт не обязан быть
+    // синхронным по контракту теста, поэтому нужно дать осесть всей цепочке
+    // промисов (в т.ч. многошаговой — await import(...), затем await fetch(...)),
+    // а не только одному микротаск-переходу.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
