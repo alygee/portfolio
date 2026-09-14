@@ -34,7 +34,19 @@ function AdaptiveQuality() {
 export default function SceneLayer() {
   return (
     <div className="scene-layer" aria-hidden="true">
-      <Canvas dpr={[1, 1.75]} camera={{ fov: 60, near: 0.1, far: 400 }}>
+      {/*
+        `pointer-events: none` в CSS у `.scene-layer` не доходит до канваса:
+        `@react-three/fiber` сам ставит inline `pointer-events: auto` на свою
+        внутреннюю обёртку вокруг `<canvas>`, а инлайн-стиль перебивает
+        унаследованное значение. `style` — единственный проп, через который
+        R3F даёт переопределить именно эту обёртку, поэтому декларация
+        передаётся сюда, а не через className/CSS.
+      */}
+      <Canvas
+        dpr={[1, 1.75]}
+        camera={{ fov: 60, near: 0.1, far: 400 }}
+        style={{ pointerEvents: 'none' }}
+      >
         <Suspense fallback={null}>
           <CareerScene />
         </Suspense>

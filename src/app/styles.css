@@ -32,8 +32,13 @@ a { color: var(--accent); }
 .skills__group h3 { font-size: .8125rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
 .skills__group ul { margin: 0; padding-left: 1.25rem; }
 
-/* 3D-слой — фон под документом. pointer-events выключены: текст остаётся
-   кликабельным. Включатся на фазе 3, когда появится picking по узлам графа. */
+/* 3D-слой — фон под документом. Кликабельность текста защищена дважды:
+   z-index (main выше слоя) и pointer-events: none. Эта декларация здесь
+   ни на что не влияет сама по себе — @react-three/fiber ставит на свою
+   обёртку вокруг <canvas> inline pointer-events: auto, который перебивает
+   унаследованное значение; действующая декларация передаётся канвасу через
+   проп `style` в SceneLayer.tsx. Фаза 3 включает picking по узлам графа
+   через этот же проп. */
 .scene-layer {
   position: fixed;
   inset: 0;
