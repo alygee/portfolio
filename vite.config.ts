@@ -9,6 +9,10 @@ export default defineConfig(({ isSsrBuild }) => ({
   plugins: [react()],
   resolve: {
     alias: { '@': resolvePath('./src') },
+    // Один экземпляр three на всё приложение. drei тянет stats-gl со своим
+    // вложенным three; два экземпляра ломают instanceof и материалы — это
+    // проявится в фазе 2, когда появятся кастомные материалы и инстансинг.
+    dedupe: ['three'],
   },
   build: isSsrBuild
     ? {
