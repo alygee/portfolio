@@ -18,16 +18,24 @@ test('deep link ведёт к секции работы', async ({ page }) => {
   await expect(page.locator('#mplat')).toBeInViewport();
 });
 
-test('deep link выживает после первой прокрутки', async ({ page }) => {
+test('deep link выживает после первой прокрутки для каждой работы', async ({ page }) => {
   // Прогресс маршрута считается от позиций секций работ, поэтому позиция, в
   // которую браузер ставит секцию по хэшу, даёт ровно прогресс её станции.
   // Красный при поломке: если прогресс снова пойдёт от доли скролла всего
   // документа, первое же событие скролла перепишет хэш на другую станцию.
-  await page.goto('#mplat');
-  await page.waitForTimeout(500);
-  await page.evaluate(() => window.scrollBy(0, 12));
-  await page.waitForTimeout(500);
-  expect(new URL(page.url()).hash).toBe('#mplat');
+  // Проверяются все секции: для отдельно взятой станции доля скролла может
+  // случайно попасть в тот же индекс, для всех сразу — нет.
+  await page.goto('/');
+  const ids = await page.$$eval('section[id]', (sections) => sections.map((s) => s.id));
+  expect(ids.length).toBeGreaterThan(1);
+
+  for (const id of ids) {
+    await page.goto(`#${id}`);
+    await page.waitForTimeout(300);
+    await page.evaluate(() => window.scrollBy(0, 12));
+    await page.waitForTimeout(300);
+    expect(new URL(page.url()).hash, `хэш после прокрутки у #${id}`).toBe(`#${id}`);
+  }
 });
 
 test('горизонтального скролла нет на узком экране', async ({ page }) => {
