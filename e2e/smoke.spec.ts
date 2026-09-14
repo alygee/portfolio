@@ -42,12 +42,6 @@ test('горизонтального скролла нет на узком эк�
 test('при prefers-reduced-motion канвас не монтируется и мост скролла не грузит lenis', async ({
   browser,
 }) => {
-  // Грубая проверка (отсутствие канваса) не различает причину: в headless-CI
-  // без GPU канвас не смонтируется и без этого флага (detect-gpu вернёт
-  // низкий tier). Поэтому дополнительно проверяем наблюдаемый и
-  // GPU-независимый эффект именно prefers-reduced-motion: мост скролла
-  // (useScrollProgress) в этом режиме идёт нативной веткой и не должен
-  // запрашивать чанк lenis вообще.
   const context = await browser.newContext({ reducedMotion: 'reduce' });
   const page = await context.newPage();
   const requestedUrls: string[] = [];
@@ -59,20 +53,22 @@ test('при prefers-reduced-motion канвас не монтируется и 
   await context.close();
 });
 
-test('без prefers-reduced-motion мост скролла грузит чанк lenis', async ({ browser }) => {
-  // Симметричная пара к тесту выше: без неё проверка «lenis не грузится при
-  // reducedMotion» была бы тривиально зелёной, если бы lenis перестал
-  // подключаться вообще, независимо от флага. hasTouch/isMobile переопределены
-  // явно: в мобильном проекте (coarse pointer) мост скролла тоже идёт
-  // нативной веткой независимо от reducedMotion — здесь проверяется именно
-  // ветка с Lenis, поэтому указатель принудительно «точный».
+test('инерционный скролл подключается только вместе со сценой', async ({ browser }) => {
+  // Проверяется связка, а не одно из её звеньев: чанк lenis запрашивается
+  // тогда и только тогда, когда канвас действительно смонтирован. В
+  // headless-CI сцена не монтируется (detect-gpu отдаёт низкий tier), и
+  // раньше здесь всё равно качались 5.3 КБ, а нативная физика прокрутки
+  // подменялась rAF-циклом без визуального выигрыша. Указатель задан точным:
+  // на грубом указателе инерция не перехватывается независимо от сцены.
   const context = await browser.newContext({ hasTouch: false, isMobile: false });
   const page = await context.newPage();
   const requestedUrls: string[] = [];
   page.on('request', (request) => requestedUrls.push(request.url()));
   await page.goto('/');
   await page.waitForTimeout(1500);
-  expect(requestedUrls.some((url) => url.includes('/assets/lenis-'))).toBe(true);
+  const canvasCount = await page.locator('canvas').count();
+  const lenisRequested = requestedUrls.some((url) => url.includes('/assets/lenis-'));
+  expect(lenisRequested).toBe(canvasCount > 0);
   await context.close();
 });
 

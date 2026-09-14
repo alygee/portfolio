@@ -8,6 +8,9 @@ const SECTION_IDS = displayJobs.map((job) => job.id);
 const COUNT = SECTION_IDS.length;
 // Секции работ по 1000 px, дальше хвост страницы: «Навыки» и «Образование».
 const SECTION_OFFSETS = [400, 1400, 2400, 3400];
+// По умолчанию тесты идут с смонтированной сценой: это ветка, где инерционный
+// скролл вообще допустим.
+const SCENE_MOUNTED = true;
 
 /**
  * Даёт осесть промисам, которые уже поставлены в очередь микротасков (в т.ч.
@@ -27,27 +30,18 @@ const LenisCtor = vi.hoisted(() => vi.fn());
 vi.mock('lenis', () => ({ default: LenisCtor }));
 
 /**
- * `useScrollProgress` опрашивает `matchMedia` по двум разным медиа-запросам
- * (`pointer: coarse` и `prefers-reduced-motion: reduce`), поэтому мок должен
- * различать их по аргументу, а не отдавать одно и то же значение на любой
- * запрос — иначе тест на Lenis-ветку незаметно завязался бы на то же
- * `matches`, что и тест на reduced-motion.
+ * Мост скролла опрашивает `matchMedia` только про тип указателя: решение о
+ * пригодности окружения для сцены (WebGL, GPU, prefers-reduced-motion)
+ * принимается в одном месте — `useSceneEnabled` — и приходит сюда параметром.
+ * Мок различает запросы по аргументу и падает на неожидаемом, чтобы тест не
+ * завязался на «любой запрос отдаёт одно и то же».
  */
-function mockMatchMedia({
-  coarse = false,
-  reducedMotion = false,
-}: {
-  coarse?: boolean;
-  reducedMotion?: boolean;
-}) {
+function mockMatchMedia({ coarse = false }: { coarse?: boolean }) {
   vi.stubGlobal(
     'matchMedia',
     vi.fn((query: string) => {
       if (query === '(pointer: coarse)') {
         return { matches: coarse, addEventListener: vi.fn(), removeEventListener: vi.fn() };
-      }
-      if (query === '(prefers-reduced-motion: reduce)') {
-        return { matches: reducedMotion, addEventListener: vi.fn(), removeEventListener: vi.fn() };
       }
       throw new Error(`неожиданный запрос matchMedia в тесте: ${query}`);
     }),
@@ -105,9 +99,9 @@ describe('useScrollProgress', () => {
     // Красный при поломке: если убрать ветвление по `pointer: coarse` (или
     // перепутать условие), Lenis начнёт грузиться и на тач — конструктор
     // будет вызван, expect провалится. Проверено экспериментом: см. отчёт.
-    mockMatchMedia({ coarse: true, reducedMotion: false });
+    mockMatchMedia({ coarse: true });
 
-    renderHook(() => useScrollProgress());
+    renderHook(() => useScrollProgress(SCENE_MOUNTED));
     await flushMicrotasks();
 
     expect(LenisCtor).not.toHaveBeenCalled();
@@ -117,9 +111,9 @@ describe('useScrollProgress', () => {
     // Красный при поломке: если на тач-ветке не навесить слушатель `scroll`
     // на window (или не пересчитывать прогресс в нём), progress останется
     // равным начальному значению (0) после события скролла.
-    mockMatchMedia({ coarse: true, reducedMotion: false });
+    mockMatchMedia({ coarse: true });
 
-    renderHook(() => useScrollProgress());
+    renderHook(() => useScrollProgress(SCENE_MOUNTED));
     scrollTo(SECTION_OFFSETS[1]!);
 
     expect(progressStore.getState().progress).toBeCloseTo(stationProgress(1, COUNT), 10);
@@ -130,10 +124,10 @@ describe('useScrollProgress', () => {
     // на этой позиции получится 0.5 (половина прокручиваемой высоты), а не 1.
     // Точка обзора здесь уже ниже последней секции работ — камера обязана
     // стоять у последней станции, хотя до конца страницы ещё половина.
-    mockMatchMedia({ coarse: true, reducedMotion: false });
+    mockMatchMedia({ coarse: true });
     setScrollMetrics({ scrollTop: 0, scrollHeight: 10_000, viewportHeight: 800 });
 
-    renderHook(() => useScrollProgress());
+    renderHook(() => useScrollProgress(SCENE_MOUNTED));
     scrollTo(4600);
 
     expect(progressStore.getState().progress).toBe(1);
@@ -144,9 +138,9 @@ describe('useScrollProgress', () => {
     // точка обзора, другая формула прогресса станции) сдвинет хотя бы одно из
     // значений. Это тот самый инвариант, из которого следует согласованность
     // deep link: браузер по хэшу ставит секцию в точку обзора.
-    mockMatchMedia({ coarse: true, reducedMotion: false });
+    mockMatchMedia({ coarse: true });
 
-    renderHook(() => useScrollProgress());
+    renderHook(() => useScrollProgress(SCENE_MOUNTED));
 
     SECTION_OFFSETS.forEach((offset, index) => {
       scrollTo(offset);
@@ -160,30 +154,29 @@ describe('useScrollProgress', () => {
   it('на указателе точной наводки Lenis загружается', async () => {
     // Красный при поломке: если ветвление всегда уходит в тач-путь (или
     // условие перевёрнуто), Lenis не будет запрошен и конструктор не
-    // вызовется. Явно указан reducedMotion: false — иначе с учётом фикса
-    // на prefers-reduced-motion этот тест стал бы ложным.
-    mockMatchMedia({ coarse: false, reducedMotion: false });
+    // вызовется. Парный тест к «без смонтированной сцены»: без него проверка
+    // «Lenis не грузится» была бы тривиально зелёной.
+    mockMatchMedia({ coarse: false });
 
-    renderHook(() => useScrollProgress());
+    renderHook(() => useScrollProgress(SCENE_MOUNTED));
     await flushMicrotasks();
 
     expect(LenisCtor).toHaveBeenCalled();
   });
 
-  it('при prefers-reduced-motion на точной наводке Lenis не загружается, прогресс идёт нативным скроллом', async () => {
-    // Красный при поломке: если убрать проверку prefers-reduced-motion (или
-    // объединить условие неверно), при точной наводке и запрошенном
-    // уменьшении движения Lenis всё равно будет запрошен — первый expect
-    // провалится. Проверено экспериментом: см. отчёт (Fix round 1).
-    mockMatchMedia({ coarse: false, reducedMotion: true });
+  it('без смонтированной сцены инерционный скролл не подключается', async () => {
+    // Красный при поломке: если Lenis перестанет зависеть от того, есть ли
+    // сцена, на машине без WebGL (или с GPU tier <= 1, или с
+    // prefers-reduced-motion) чанк lenis всё равно скачается и нативная физика
+    // прокрутки будет заменена rAF-циклом без единого визуального выигрыша.
+    mockMatchMedia({ coarse: false });
 
-    renderHook(() => useScrollProgress());
+    renderHook(() => useScrollProgress(false));
     await flushMicrotasks();
 
     expect(LenisCtor).not.toHaveBeenCalled();
 
     scrollTo(SECTION_OFFSETS[1]!);
-
     expect(progressStore.getState().progress).toBeCloseTo(stationProgress(1, COUNT), 10);
   });
 });

@@ -11,10 +11,18 @@ const SECTION_IDS = displayJobs.map((job) => job.id);
  * когда N-я секция в точке обзора (у верхней кромки окна — там же, куда её
  * ставит переход по хэшу), прогресс равен прогрессу N-й станции.
  *
- * На тач-устройствах инерция не перехватывается: подменять нативный скролл
- * на телефоне — значит ломать привычные жесты (см. спеку §7).
+ * Инерционный скролл (Lenis) включается только там, где смонтирована сцена:
+ * иначе это 5.3 КБ и подмена нативной физики прокрутки rAF-циклом без единого
+ * визуального выигрыша. Пригодность окружения решается в одном месте —
+ * `useSceneEnabled` (WebGL, GPU tier, prefers-reduced-motion по спеке §7), — а
+ * здесь приходит готовым ответом: дублировать эти проверки нельзя, они
+ * разъезжаются.
+ *
+ * На тач-устройствах инерция не перехватывается даже при живой сцене:
+ * подменять нативный скролл на телефоне — значит ломать привычные жесты
+ * (см. спеку §7).
  */
-export function useScrollProgress(): void {
+export function useScrollProgress(sceneMounted: boolean): void {
   useEffect(() => {
     let offsets: readonly number[] = [];
     let scrollLimit = 0;
@@ -35,13 +43,7 @@ export function useScrollProgress(): void {
     publish(window.scrollY);
 
     const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
-    // Инерционный скролл (Lenis) — это движение, а prefers-reduced-motion
-    // просит его не показывать. К тому же 3D-слой в этом режиме не
-    // монтируется вообще (см. useSceneEnabled), так что подмена физики
-    // скролла дала бы изменённое поведение страницы без единого визуального
-    // выигрыша — идём нативной веткой, как и на тач-устройствах.
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const useNativeScroll = coarsePointer || reducedMotion;
+    const useNativeScroll = !sceneMounted || coarsePointer;
 
     const onResize = () => {
       measure();
@@ -81,5 +83,5 @@ export function useScrollProgress(): void {
       window.removeEventListener('resize', onResize);
       lenis?.destroy();
     };
-  }, []);
+  }, [sceneMounted]);
 }

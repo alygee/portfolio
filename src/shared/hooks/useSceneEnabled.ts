@@ -23,8 +23,17 @@ export function useSceneEnabled(): boolean {
 
     let cancelled = false;
     void (async () => {
-      const { getGPUTier } = await import('detect-gpu');
-      const { tier } = await getGPUTier();
+      // Детектор по умолчанию тянет бенчмарки с внешнего CDN, то есть может
+      // упасть на любой сети. Решение при ошибке явное: сцена не монтируется —
+      // страница обязана быть полезной без неё.
+      let tier: number;
+      try {
+        const { getGPUTier } = await import('detect-gpu');
+        ({ tier } = await getGPUTier());
+      } catch (error) {
+        console.warn('Класс GPU не определён, 3D-слой не монтируется:', error);
+        return;
+      }
       if (cancelled) return;
       setEnabled(shouldEnableScene({ prefersReducedMotion, hasWebGL, gpuTier: tier }));
     })();

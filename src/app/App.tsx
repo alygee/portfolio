@@ -13,7 +13,7 @@ export default function App() {
   // Порядок важен: мост скролла сначала ставит прогресс по текущей позиции
   // скролла, а затем useStationHash может переопределить его, если в URL
   // пришёл deep link на станцию (иначе вход по '#mplat' сломается).
-  useScrollProgress();
+  useScrollProgress(sceneEnabled);
   useStationHash();
 
   return (
