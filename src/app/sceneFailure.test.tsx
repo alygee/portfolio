@@ -8,6 +8,16 @@ import App from './App';
  * пустой тёмный экран, причём только на машинах, где сцена вообще запускается.
  */
 vi.mock('@/shared/hooks/useSceneEnabled', () => ({ useSceneEnabled: () => true }));
+// Со смонтированной сценой мост скролла подключает инерционный скролл, а
+// настоящий Lenis требует ResizeObserver, которого в jsdom нет. Здесь
+// проверяется граница ошибок, а не мост скролла, — подменяем конструктор.
+vi.mock('lenis', () => ({
+  default: class LenisStub {
+    on() {}
+    raf() {}
+    destroy() {}
+  },
+}));
 vi.mock('@/features/career-flight/SceneLayer', () => ({
   default: () => {
     throw new Error('чанк сцены не загрузился');
