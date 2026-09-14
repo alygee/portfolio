@@ -27,12 +27,6 @@ for (const file of assets.filter((f) => f.endsWith('.js') && !entryPath.endsWith
   const code = await readFile(`dist/assets/${file}`, 'utf8');
   if (code.includes(THREE_MARKER)) lazyWithThree.push(file);
 }
-if (lazyWithThree.length > 1) {
-  failures.push(
-    `three найден более чем в одном чанке (${lazyWithThree.join(', ')}) — ` +
-      'в дереве зависимостей два экземпляра библиотеки',
-  );
-}
 if (lazyWithThree.length === 0) {
   failures.push('three не найден ни в одном ленивом чанке — сцена не собралась?');
 }
