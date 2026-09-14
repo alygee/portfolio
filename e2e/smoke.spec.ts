@@ -18,6 +18,18 @@ test('deep link ведёт к секции работы', async ({ page }) => {
   await expect(page.locator('#mplat')).toBeInViewport();
 });
 
+test('deep link выживает после первой прокрутки', async ({ page }) => {
+  // Прогресс маршрута считается от позиций секций работ, поэтому позиция, в
+  // которую браузер ставит секцию по хэшу, даёт ровно прогресс её станции.
+  // Красный при поломке: если прогресс снова пойдёт от доли скролла всего
+  // документа, первое же событие скролла перепишет хэш на другую станцию.
+  await page.goto('#mplat');
+  await page.waitForTimeout(500);
+  await page.evaluate(() => window.scrollBy(0, 12));
+  await page.waitForTimeout(500);
+  expect(new URL(page.url()).hash).toBe('#mplat');
+});
+
 test('горизонтального скролла нет на узком экране', async ({ page }) => {
   await page.setViewportSize({ width: 400, height: 800 });
   await page.goto('/');
