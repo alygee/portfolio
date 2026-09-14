@@ -6,6 +6,10 @@ import { useSceneEnabled } from '@/shared/hooks/useSceneEnabled';
 import { ErrorBoundary } from '@/shared/ui/ErrorBoundary';
 import './styles.css';
 
+// Это и есть ленивая граница чанка сцены — единственное легитимное место,
+// где допустим импорт SceneLayer вне его собственного поддерева: он динамический
+// (`lazy(() => import(...))`), поэтому three не попадёт в главный чанк.
+// oxlint-disable-next-line no-restricted-imports
 const SceneLayer = lazy(() => import('@/features/career-flight/SceneLayer'));
 
 export default function App() {

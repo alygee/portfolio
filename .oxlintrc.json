@@ -18,18 +18,65 @@
         "paths": [
           {
             "name": "three",
-            "message": "three допустим только в src/features/career-flight/** — он обязан остаться в ленивом чанке сцены. Чистую математику берите из entities/route."
+            "message": "three допустим только в ленивых модулях сцены (src/features/career-flight/SceneLayer.tsx и его дерево) — он обязан остаться в ленивом чанке. Чистую математику берите из @/entities/route/progress."
           }
         ],
         "patterns": [
-          { "group": ["three/*"], "message": "three допустим только в src/features/career-flight/**." }
+          {
+            "group": ["three/*"],
+            "message": "three допустим только в ленивых модулях сцены (src/features/career-flight/SceneLayer.tsx и его дерево)."
+          },
+          {
+            // Утечка 2026-09: `useStationHash.ts` статически подключён из
+            // `App`, но брал математику из `./route`, который тянет `three` —
+            // главный чанк вырос с 63 до 160 КБ. `no-restricted-imports` по
+            // спецификатору `three` этот случай не ловит: `useStationHash.ts`
+            // импортировал не `three`, а `route`, который его тянет
+            // транзитивно. Поэтому здесь отдельно запрещены сами модули
+            // сцены — и по относительному пути (`./route` из соседнего файла
+            // в той же папке), и по алиасу (`@/features/career-flight/route`
+            // из любого другого места). Разрешено только внутри ленивого
+            // поддерева — см. `overrides` ниже.
+            "group": [
+              "./route",
+              "**/career-flight/route",
+              "./stepCamera",
+              "**/career-flight/stepCamera",
+              "./CameraRig",
+              "**/career-flight/CameraRig",
+              "./StationMarker",
+              "**/career-flight/StationMarker",
+              "./CareerScene",
+              "**/career-flight/CareerScene",
+              "./SceneLayer",
+              "**/career-flight/SceneLayer"
+            ],
+            "message": "Этот модуль сцены тянет three и обязан оставаться в ленивом чанке. Математику прогресса берите из @/entities/route/progress; SceneLayer подключайте только через lazy(() => import(...))."
+          }
         ]
       }
     ]
   },
   "overrides": [
     {
-      "files": ["src/features/career-flight/**"],
+      // Ленивое поддерево сцены — единственное место, где допустимы прямой
+      // импорт `three` и импорт друг друга между этими модулями. Список
+      // осознанно явный (не `career-flight/**`): `useStationHash.ts` и
+      // `stationHash.ts` лежат в той же папке, но подключены из `App`
+      // статически, поэтому must остаться под запретом. Новый файл сцены с
+      // `three` не попадёт сюда сам — это нужно сделать осознанно.
+      "files": [
+        "src/features/career-flight/SceneLayer.tsx",
+        "src/features/career-flight/CareerScene.tsx",
+        "src/features/career-flight/CareerScene.test.tsx",
+        "src/features/career-flight/CameraRig.tsx",
+        "src/features/career-flight/CameraRig.test.tsx",
+        "src/features/career-flight/StationMarker.tsx",
+        "src/features/career-flight/route.ts",
+        "src/features/career-flight/route.test.ts",
+        "src/features/career-flight/stepCamera.ts",
+        "src/features/career-flight/stepCamera.test.ts"
+      ],
       "rules": { "no-restricted-imports": "off" }
     }
   ]
