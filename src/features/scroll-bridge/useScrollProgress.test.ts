@@ -89,7 +89,7 @@ beforeEach(() => {
   LenisCtor.mockImplementation(function LenisMock() {
     return { on: vi.fn(), raf: vi.fn(), destroy: vi.fn() };
   });
-  progressStore.setState({ progress: 0, mode: 'travelling' });
+  progressStore.setState({ progress: 0 });
   setScrollMetrics({ scrollTop: 0, scrollHeight: 6000, viewportHeight: 800 });
   mountSections(SECTION_OFFSETS);
 });

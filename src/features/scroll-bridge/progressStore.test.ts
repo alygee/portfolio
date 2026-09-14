@@ -1,12 +1,12 @@
-import { progressStore, setProgress, setSceneMode } from './progressStore';
+import { progressStore, setProgress } from './progressStore';
 
 describe('progressStore', () => {
   beforeEach(() => {
-    progressStore.setState({ progress: 0, mode: 'travelling' });
+    progressStore.setState({ progress: 0 });
   });
 
-  it('стартует в начале маршрута в режиме путешествия', () => {
-    expect(progressStore.getState()).toEqual({ progress: 0, mode: 'travelling' });
+  it('стартует в начале маршрута', () => {
+    expect(progressStore.getState()).toEqual({ progress: 0 });
   });
 
   it('клампит прогресс в 0..1', () => {
@@ -24,10 +24,5 @@ describe('progressStore', () => {
     unsubscribe();
     setProgress(0.75);
     expect(seen).toEqual([0.25, 0.5]);
-  });
-
-  it('переключает режим сцены', () => {
-    setSceneMode('docked');
-    expect(progressStore.getState().mode).toBe('docked');
   });
 });

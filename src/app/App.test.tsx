@@ -6,7 +6,7 @@ import App from './App';
 
 beforeEach(() => {
   window.history.replaceState(null, '', window.location.pathname);
-  progressStore.setState({ progress: 0, mode: 'travelling' });
+  progressStore.setState({ progress: 0 });
 });
 
 describe('App', () => {

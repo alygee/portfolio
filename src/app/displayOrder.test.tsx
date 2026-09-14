@@ -22,7 +22,7 @@ function resetLocationHash() {
 
 beforeEach(() => {
   resetLocationHash();
-  progressStore.setState({ progress: 0, mode: 'travelling' });
+  progressStore.setState({ progress: 0 });
 });
 
 describe('порядок отображения работ', () => {

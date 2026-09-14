@@ -25,7 +25,7 @@ async function mount() {
 
 describe('CameraRig', () => {
   beforeEach(() => {
-    progressStore.setState({ progress: 0, mode: 'travelling' });
+    progressStore.setState({ progress: 0 });
   });
 
   it('ставит камеру в начало маршрута на первом кадре', async () => {
