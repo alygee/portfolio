@@ -44,6 +44,12 @@ describe('useSceneEnabled', () => {
     );
   });
 
+  it('включается на интегрированной графике, которую detect-gpu оценил как tier 1', async () => {
+    getGPUTier.mockResolvedValue({ tier: 1 });
+    const { result } = renderHook(() => useSceneEnabled());
+    await waitFor(() => expect(result.current).toBe(true));
+  });
+
   it('сначала выключено, затем включается после определения GPU', async () => {
     const { result } = renderHook(() => useSceneEnabled());
     expect(result.current).toBe(false);
@@ -58,8 +64,8 @@ describe('useSceneEnabled', () => {
     expect(result.current).toBe(false);
   });
 
-  it('остаётся выключенным на слабом GPU', async () => {
-    getGPUTier.mockResolvedValue({ tier: 1 });
+  it('остаётся выключенным на GPU tier 0 (WebGL не работает или заблокирован)', async () => {
+    getGPUTier.mockResolvedValue({ tier: 0 });
     const { result } = renderHook(() => useSceneEnabled());
     await waitFor(() => expect(getGPUTier).toHaveBeenCalled());
     expect(result.current).toBe(false);
