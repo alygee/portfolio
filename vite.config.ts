@@ -2,31 +2,36 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
+import { collectThreeRoots } from './src/shared/lib/threeRoots';
 
 const resolvePath = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
 /**
- * Роняет сборку, если в бандл попало больше одного экземпляра three.
- * Проверка идёт по графу модулей, а не по тексту чанков: в проекте одна
- * граница ленивой загрузки, поэтому второй экземпляр оказался бы в том же
- * чанке, что и первый, и текстовый маркер его бы не заметил.
+ * Роняет сборку, если в бандл попало больше одного экземпляра three, или
+ * если плагин вообще не видит three в клиентской сборке (признак ослепшей проверки).
+ *
+ * Сегодня stats-gl в compiled коде не импортирует three, поэтому дубликата нет.
+ * dedupe и этот плагин — страховка от любой будущей зависимости, которая
+ * принесёт собственную копию three.
  */
-function singleThreeInstance(): Plugin {
+function singleThreeInstance({ requireThree }: { requireThree: boolean }): Plugin {
   return {
     name: 'single-three-instance',
     apply: 'build',
     generateBundle(_options, bundle) {
-      const roots = new Set<string>();
-      for (const output of Object.values(bundle)) {
-        if (output.type !== 'chunk') continue;
-        for (const id of Object.keys(output.modules)) {
-          const match = id.match(/^(.*[\\/]node_modules[\\/]three)[\\/]/);
-          if (match?.[1]) roots.add(match[1]);
-        }
-      }
+      const moduleIds = Object.values(bundle).flatMap((output) =>
+        output.type === 'chunk' ? Object.keys(output.modules) : [],
+      );
+      const roots = collectThreeRoots(moduleIds);
       if (roots.size > 1) {
         this.error(
           `В сборку попало ${roots.size} экземпляра three:\n${[...roots].join('\n')}`,
+        );
+      }
+      if (requireThree && roots.size === 0) {
+        this.error(
+          'В клиентской сборке не найден ни один модуль three: проверка экземпляров ослепла ' +
+            '(сломан поиск корней) или сцена выпала из сборки.',
         );
       }
     },
@@ -35,12 +40,13 @@ function singleThreeInstance(): Plugin {
 
 export default defineConfig(({ isSsrBuild }) => ({
   base: '/portfolio/',
-  plugins: [react(), singleThreeInstance()],
+  plugins: [react(), singleThreeInstance({ requireThree: !isSsrBuild })],
   resolve: {
     alias: { '@': resolvePath('./src') },
-    // Один экземпляр three на всё приложение. drei тянет stats-gl со своим
-    // вложенным three; два экземпляра ломают instanceof и материалы — это
-    // проявится в фазе 2, когда появятся кастомные материалы и инстансинг.
+    // Один экземпляр three на всё приложение. Сегодня stats-gl в compiled коде
+    // три не импортирует, но три на диске в его node_modules. Это страховка
+    // от любой будущей зависимости, которая принесёт собственную копию three.
+    // Два экземпляра ломают instanceof и материалы.
     dedupe: ['three'],
   },
   build: isSsrBuild
