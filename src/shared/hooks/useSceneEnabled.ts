@@ -16,6 +16,12 @@ export function useSceneEnabled(): boolean {
     const prefersReducedMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches;
+    // Намеренно: значение зависит от window/WebGL, которых нет на сервере при
+    // предрендере, поэтому его нельзя вычислить во время рендера без
+    // расхождения с SSR-разметкой. Начальное состояние совпадает с сервером
+    // (false), эффект обновляет его один раз после монтирования — стандартный
+    // паттерн для гидратации.
+    // oxlint-disable-next-line react/set-state-in-effect
     setEnabled(shouldEnableScene({ prefersReducedMotion, hasWebGL: detectWebGL() }));
   }, []);
 

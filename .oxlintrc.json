@@ -1,0 +1,36 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  // Главное правило здесь — запрет импорта `three` вне папки сцены.
+  // `three` весит около 230 КБ gzip и обязан оставаться в ленивом чанке. Один
+  // импорт в модуле, который тянется из `App`, отменяет всю схему: так уже
+  // случалось, когда `useStationHash` взял математику из `route.ts`, и главный
+  // чанк вырос с 63 до 160 КБ. Проверка размера бандла ловит это только после
+  // сборки, линтер — сразу.
+  "plugins": ["typescript", "react"],
+  "categories": { "correctness": "error" },
+  "ignorePatterns": ["dist", "dist-ssr", "coverage", "playwright-report", "test-results"],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "three",
+            "message": "three допустим только в src/features/career-flight/** — он обязан остаться в ленивом чанке сцены. Чистую математику берите из entities/route."
+          }
+        ],
+        "patterns": [
+          { "group": ["three/*"], "message": "three допустим только в src/features/career-flight/**." }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["src/features/career-flight/**"],
+      "rules": { "no-restricted-imports": "off" }
+    }
+  ]
+}
