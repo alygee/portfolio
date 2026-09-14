@@ -1,8 +1,8 @@
-// Именно `career-flight/routeProgress`, а не `./route`: у этой математики нет
-// зависимости на `three`, поэтому мост скролла остаётся в главном чанке.
-// Импорт не случайный: прогресс станции должен быть определён ровно один раз,
-// иначе позиция камеры и позиция документа снова разъедутся.
-import { stationProgress } from '@/features/career-flight/routeProgress';
+// Именно `@/entities/route/progress`, а не `career-flight/route`: у этой
+// математики нет зависимости на `three`, поэтому мост скролла остаётся в
+// главном чанке. Импорт не случайный: прогресс станции должен быть определён
+// ровно один раз, иначе позиция камеры и позиция документа снова разъедутся.
+import { stationProgress } from '@/entities/route/progress';
 import { clamp01 } from '@/shared/lib/math';
 
 export type SectionProgressInput = {

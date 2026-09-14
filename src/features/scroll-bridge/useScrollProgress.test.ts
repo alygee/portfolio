@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { displayJobs } from '@/content';
-import { stationProgress } from '@/features/career-flight/routeProgress';
+import { stationProgress } from '@/entities/route/progress';
 import { progressStore } from './progressStore';
 import { useScrollProgress } from './useScrollProgress';
 

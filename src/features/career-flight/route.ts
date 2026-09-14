@@ -1,12 +1,6 @@
 import { CatmullRomCurve3, Vector3 } from 'three';
 import { displayJobs } from '@/content';
 import { clamp01 } from '@/shared/lib/math';
-import { activeStationIndex, stationProgress } from './routeProgress';
-
-// Реэкспорт: сама математика прогресса живёт в `routeProgress.ts`, у неё нет
-// зависимости на `three` — это важно для кода в главном чанке (см. комментарий
-// там). Здесь только ре-экспорт, чтобы импортёры `./route` не заметили разницы.
-export { activeStationIndex, stationProgress };
 
 /** Насколько далеко вперёд по маршруту смотрит камера. */
 export const LOOK_AHEAD = 8;

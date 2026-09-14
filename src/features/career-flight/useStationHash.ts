@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { displayJobs } from '@/content';
 import { progressStore, setProgress } from '@/features/scroll-bridge/progressStore';
-// Именно `./routeProgress`, а не `./route`: этот хук зовётся из `App`
-// безусловно, в том числе когда сцена не смонтирована, то есть попадает в
-// главный чанк. `./route` тянет за собой `three` через модульный синглтон
+// Именно `@/entities/route/progress`, а не `./route`: этот хук зовётся из
+// `App` безусловно, в том числе когда сцена не смонтирована, то есть попадает
+// в главный чанк. `./route` тянет за собой `three` через модульный синглтон
 // `route` — этого чанк не должен видеть.
-import { activeStationIndex, stationProgress } from './routeProgress';
+import { activeStationIndex, stationProgress } from '@/entities/route/progress';
 import { hashToStationIndex, stationIndexToHash } from './stationHash';
 
 /** Порядок тот же, что у секций документа: см. `displayJobs`. */

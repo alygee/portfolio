@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { displayJobs } from '@/content';
+import { stationProgress } from '@/entities/route/progress';
 import { progressStore, setProgress } from '@/features/scroll-bridge/progressStore';
-import { stationProgress } from './route';
 import { useStationHash } from './useStationHash';
 
 function resetLocationHash() {
@@ -10,7 +10,7 @@ function resetLocationHash() {
 
 beforeEach(() => {
   resetLocationHash();
-  progressStore.setState({ progress: 0, mode: 'travelling' });
+  progressStore.setState({ progress: 0 });
 });
 
 describe('useStationHash', () => {

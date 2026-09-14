@@ -1,4 +1,4 @@
-import { stationProgress } from '@/features/career-flight/routeProgress';
+import { stationProgress } from '@/entities/route/progress';
 import { sectionsToProgress } from './scrollProgress';
 
 /**
