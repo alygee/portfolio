@@ -24,7 +24,7 @@ export const jobs = [
     city: 'Омск',
     start: '2016-09',
     end: '2017-11',
-    role: 'PHP (fullstack) разработчик',
+    role: 'PHP-разработчик (fullstack)',
     summary: 'Разработка тем и плагинов для e-commerce.',
     bullets: [
       'Разрабатывал темы и плагины для e-commerce (WordPress, Magento).',
@@ -41,7 +41,7 @@ export const jobs = [
     city: 'Казань',
     start: '2017-11',
     end: '2018-07',
-    role: 'Front-end разработчик',
+    role: 'Frontend-разработчик',
     summary: 'Интерфейс геологической системы.',
     bullets: [
       'Разработка интерфейса геологической системы на ExtJS.',
@@ -58,7 +58,7 @@ export const jobs = [
     city: 'Казань',
     start: '2018-06',
     end: '2025-04',
-    role: 'Frontend разработчик',
+    role: 'Frontend-разработчик',
     summary:
       'Высоконагруженная телеком-платформа и внутренние интерфейсы для предбиллинга.',
     bullets: [
