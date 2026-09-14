@@ -1,5 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Headless-браузер без GPU не даёт WebGL-контекста, поэтому 3D-слой в тестах не
+// монтировался вовсе и его появление никто не проверял. swiftshader — программный
+// рендерер: кадры считает процессор, но для страницы WebGL полноценный, и канвас
+// становится наблюдаемым фактом.
+const launchOptions = {
+  args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
+};
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -16,7 +24,7 @@ export default defineConfig({
     timeout: 180_000,
   },
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile', use: { ...devices['Pixel 7'] } },
+    { name: 'desktop', use: { ...devices['Desktop Chrome'], launchOptions } },
+    { name: 'mobile', use: { ...devices['Pixel 7'], launchOptions } },
   ],
 });

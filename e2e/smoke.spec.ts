@@ -63,12 +63,12 @@ test('при prefers-reduced-motion канвас не монтируется и 
 
 test('инерционный скролл подключается только вместе со сценой', async ({ browser }) => {
   // Проверяется связка, а не одно из её звеньев: чанк lenis запрашивается
-  // тогда и только тогда, когда канвас действительно смонтирован. В
-  // headless-CI сцена обычно не монтируется (WebGL недоступен без реального
-  // GPU-рендерера), и раньше здесь всё равно качались 5.3 КБ, а нативная
-  // физика прокрутки подменялась rAF-циклом без визуального выигрыша.
-  // Указатель задан точным: на грубом указателе инерция не перехватывается
-  // независимо от сцены.
+  // тогда и только тогда, когда канвас действительно смонтирован. До
+  // swiftshader сцена в headless-CI не монтировалась вовсе (WebGL был
+  // недоступен без реального GPU-рендерера), и раньше здесь всё равно
+  // качались 5.3 КБ, а нативная физика прокрутки подменялась rAF-циклом без
+  // визуального выигрыша. Указатель задан точным: на грубом указателе
+  // инерция не перехватывается независимо от сцены.
   const context = await browser.newContext({ hasTouch: false, isMobile: false });
   const page = await context.newPage();
   const requestedUrls: string[] = [];
@@ -85,4 +85,37 @@ test('нарушений доступности нет', async ({ page }) => {
   await page.goto('/');
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(violations.map((v) => v.id)).toEqual([]);
+});
+
+test('3D-слой монтируется, и канвас ровно один', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.scene-layer canvas')).toHaveCount(1, { timeout: 15_000 });
+  await expect(page.locator('canvas')).toHaveCount(1);
+});
+
+test('канвас не перехватывает клики по ссылке резюме', async ({ page, context }) => {
+  // .scene-layer растянут на весь вьюпорт (position: fixed; inset: 0), поэтому
+  // любая ссылка в шапке резюме геометрически лежит поверх канваса. Проверяем
+  // не CSS-декларацию pointer-events (она может разойтись с фактом — из-за
+  // z-index, размеров слоя или порядка в DOM), а сам клик: Playwright перед
+  // click() выполняет hit-test в точке клика и падает с понятной ошибкой
+  // «element intercepts pointer events», если сверху что-то есть. Ссылка
+  // открывается в новой вкладке — ждём событие popup как доказательство, что
+  // клик действительно дошёл до <a>, а не просто не бросил исключение.
+  await page.goto('/');
+  await expect(page.locator('.scene-layer canvas')).toHaveCount(1, { timeout: 15_000 });
+  const link = page.locator('a[href="https://t.me/albert_allagulov"]');
+  await expect(link).toBeVisible();
+  const [popup] = await Promise.all([context.waitForEvent('page'), link.click()]);
+  await popup.close();
+
+  // Дополнительно, но не вместо: стиль тоже должен быть выключен явно.
+  await expect(page.locator('.scene-layer')).toHaveCSS('pointer-events', 'none');
+});
+
+test('прокрутка до конца доводит хэш до последней работы', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.scene-layer canvas')).toHaveCount(1, { timeout: 15_000 });
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expect.poll(() => new URL(page.url()).hash, { timeout: 10_000 }).toBe('#amazingcat');
 });
