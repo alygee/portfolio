@@ -1,4 +1,4 @@
-import { jobs } from '@/content';
+import { displayJobs, jobs } from '@/content';
 import { formatMonths, totalExperienceMonths } from '@/entities/job/duration';
 import { currentMonthIso } from '@/shared/lib/now';
 import { JobEntry } from './JobEntry';
@@ -6,7 +6,6 @@ import { SkillList } from './SkillList';
 
 export function ResumeDocument({ now = currentMonthIso() }: { now?: string } = {}) {
   const experience = formatMonths(totalExperienceMonths(jobs, now));
-  const ordered = [...jobs].reverse();
 
   return (
     <article className="resume">
@@ -35,7 +34,7 @@ export function ResumeDocument({ now = currentMonthIso() }: { now?: string } = {
       </header>
 
       <h2>Опыт работы</h2>
-      {ordered.map((job) => (
+      {displayJobs.map((job) => (
         <JobEntry job={job} now={now} key={job.id} />
       ))}
 

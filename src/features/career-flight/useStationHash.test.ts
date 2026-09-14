@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react';
-import { jobs } from '@/content';
+import { displayJobs } from '@/content';
 import { progressStore, setProgress } from '@/features/scroll-bridge/progressStore';
 import { stationProgress } from './route';
 import { useStationHash } from './useStationHash';
@@ -22,7 +22,12 @@ describe('useStationHash', () => {
 
     renderHook(() => useStationHash());
 
-    expect(progressStore.getState().progress).toBe(stationProgress(2, jobs.length));
+    // Индекс станции — это индекс секции в документе сверху (`displayJobs`),
+    // а не индекс в хронологическом `jobs`.
+    const expected = displayJobs.findIndex((job) => job.id === 'mplat');
+    expect(progressStore.getState().progress).toBe(
+      stationProgress(expected, displayJobs.length),
+    );
   });
 
   it('при смене активной станции переписывает хэш на её идентификатор', () => {
@@ -31,9 +36,9 @@ describe('useStationHash', () => {
     // location.hash не совпадёт с '#polykod'.
     renderHook(() => useStationHash());
 
-    setProgress(stationProgress(1, jobs.length));
+    setProgress(stationProgress(1, displayJobs.length));
 
-    expect(window.location.hash).toBe(`#${jobs[1]!.id}`);
+    expect(window.location.hash).toBe(`#${displayJobs[1]!.id}`);
   });
 
   it('пишет в историю один раз на смену станции, а не на каждое изменение прогресса', () => {
@@ -50,7 +55,7 @@ describe('useStationHash', () => {
     setProgress(0.1);
     expect(replaceStateSpy).not.toHaveBeenCalled();
 
-    setProgress(stationProgress(1, jobs.length));
+    setProgress(stationProgress(1, displayJobs.length));
     expect(replaceStateSpy).toHaveBeenCalledTimes(1);
   });
 });

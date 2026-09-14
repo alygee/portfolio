@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { jobs } from '@/content';
+import { displayJobs } from '@/content';
 import { progressStore, setProgress } from '@/features/scroll-bridge/progressStore';
 // Именно `./routeProgress`, а не `./route`: этот хук зовётся из `App`
 // безусловно, в том числе когда сцена не смонтирована, то есть попадает в
@@ -8,7 +8,8 @@ import { progressStore, setProgress } from '@/features/scroll-bridge/progressSto
 import { activeStationIndex, stationProgress } from './routeProgress';
 import { hashToStationIndex, stationIndexToHash } from './stationHash';
 
-const IDS = jobs.map((job) => job.id);
+/** Порядок тот же, что у секций документа: см. `displayJobs`. */
+const IDS = displayJobs.map((job) => job.id);
 
 /**
  * Двусторонняя связь маршрута и URL. Хэш пишется только при смене станции,

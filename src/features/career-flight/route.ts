@@ -1,5 +1,5 @@
 import { CatmullRomCurve3, Vector3 } from 'three';
-import { jobs } from '@/content';
+import { displayJobs } from '@/content';
 import { clamp01 } from '@/shared/lib/math';
 import { activeStationIndex, stationProgress } from './routeProgress';
 
@@ -42,7 +42,7 @@ export function buildRoute(stationCount: number): CatmullRomCurve3 {
  * рендера, рассчитывает на одну и ту же кривую. Нужна другая геометрия —
  * вызывай `buildRoute` и работай со своим экземпляром, а не правь этот.
  */
-export const route = buildRoute(jobs.length);
+export const route = buildRoute(displayJobs.length);
 
 export function progressToCamera(t: number): { position: Vector3; target: Vector3 } {
   const clamped = clamp01(t);
