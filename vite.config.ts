@@ -2,10 +2,11 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
 import { singleThreeInstance } from './src/shared/lib/singleThreeInstancePlugin';
+import { currentMonthIso } from './src/shared/lib/now';
 
 const resolvePath = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
-export default defineConfig(({ isSsrBuild }) => ({
+export default defineConfig(({ isSsrBuild, command }) => ({
   base: '/portfolio/',
   plugins: [react(), singleThreeInstance({ requireThree: !isSsrBuild })],
   resolve: {
@@ -16,6 +17,18 @@ export default defineConfig(({ isSsrBuild }) => ({
     // Два экземпляра ломают instanceof и материалы.
     dedupe: ['three'],
   },
+  // Месяц сборки, вшитый в бандл как `__BUILD_MONTH__` (см. src/shared/lib/now.ts).
+  // `npm run build` вызывает `vite build` (клиент) и `vite build --ssr` (SSR,
+  // читает scripts/prerender.mjs) — это два запуска ОДНОГО этого конфига, и
+  // оба получают одно и то же значение, посчитанное здесь при загрузке
+  // конфига. Так предрендер и клиентская гидратация считают стаж от одного
+  // «сейчас» и не расходятся. Подставляется только при реальной сборке —
+  // на dev-сервере и в vitest (`command !== 'build'`) константы нет, и
+  // currentMonthIso() берёт реальные часы.
+  define:
+    command === 'build'
+      ? { __BUILD_MONTH__: JSON.stringify(currentMonthIso(new Date())) }
+      : undefined,
   build: isSsrBuild
     ? {
         // Два входа только для SSR-сборки: разметка и утилита инъекции,
