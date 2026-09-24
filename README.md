@@ -7,10 +7,12 @@ https://alygee.github.io/portfolio/
 
 - Дизайн: `docs/superpowers/specs/2026-09-13-portfolio-3d-design.md`
 - План фаз 0-1: `docs/superpowers/plans/2026-09-13-portfolio-phases-0-1.md`
+- План фазы 1.5: `docs/superpowers/plans/2026-09-14-portfolio-phase-1-5.md`
 
 ```bash
 npm install
 npm run dev         # разработка
+npm run lint        # Oxlint
 npm test            # тесты
 npm run build       # сборка + предрендер в dist/
 npm run check:size  # бюджет главного чанка (<=100 КБ gzip, без three)
