@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Стаж на странице резюме вшивается в HTML/бандл на этапе сборки как
+  # месяц сборки (src/shared/lib/now.ts, __BUILD_MONTH__). Без пересборки
+  # это число молча устаревает, поэтому раз в месяц пересобираем и
+  # передеплоиваем сайт даже без изменений в коде.
+  schedule:
+    - cron: '10 0 1 * *'
 
 permissions:
   contents: read
