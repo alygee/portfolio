@@ -1,75 +1,128 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { PNG } from 'pngjs';
 
-type SceneFrame = { signature: string; monochrome: boolean };
+type SceneFrame = { data: Buffer; length: number };
+
+// Сэмплируем с шагом, не каждый пиксель: изображение большое, а для оценки
+// монохромности и сравнения кадров достаточно выборки. Шаг — взаимно простое
+// с четырьмя число пикселей, чтобы не попадать в один и тот же столбец кадра
+// из-за совпадения с шириной канваса.
+const SAMPLE_STEP = 4 * 977;
 
 /**
- * Снимает кадр канваса сцены и возвращает сигнатуру (для сравнения «кадры
- * различаются») и признак «кадр не одноцветный». Оба вычисляются в браузере
- * одним evaluate, чтобы через границу Playwright/Node не гонять мегабайты
- * ImageData на каждый снимок — только короткая строка и булево.
+ * Порог суммы |Δr|+|Δg|+|Δb| в сэмплированной точке, ниже которого два кадра
+ * считаются одним и тем же кадром. PNG — лосслес-формат, поэтому декодированные
+ * пиксели не несут артефактов сжатия, но программный рендерер (swiftshader)
+ * не обязан быть побитово детерминирован кадр к кадру даже при неподвижной
+ * камере — небольшой допуск нужен, чтобы такой шум не мешал ни циклу
+ * ожидания стабилизации (тест завис бы в вечном ожидании точного совпадения),
+ * ни проверке «кадры отличаются» (шум мог бы ложно сойти за движение камеры).
+ * Порог намного меньше типичной разницы между станциями маршрута — обе
+ * обязательные мутации (пустая сцена, замёрзшая камера) всё равно красят
+ * тесты, см. final-fix-report.md.
+ */
+const FRAME_DIFF_THRESHOLD = 24;
+
+/**
+ * Снимает кадр канваса сцены скриншотом Playwright, а не чтением WebGL
+ * drawing buffer (`getImageData`/`toDataURL`) со страницы. Скриншот идёт
+ * через композитор браузера и не требует `preserveDrawingBuffer: true` —
+ * этот флаг раньше стоял прямо в продакшен-пропах `<Canvas>` (SceneLayer.tsx)
+ * ради теста и лишал композитор быстрого пути (блит вместо флипа) для каждого
+ * посетителя сайта, а не только для CI; дороже всего — на мобильных
+ * tile-based GPU, ровно на классе устройств из проекта `mobile`.
  *
- * Способ чтения — canvas.drawImage() WebGL-канваса во временный 2D-канвас
- * с последующим getImageData(), а не canvas.toDataURL() на самом канвасе
- * сцены. Оба метода читают один и тот же drawing buffer и одинаково зависят
- * от preserveDrawingBuffer: без него браузер вправе очистить буфер сразу
- * после композитинга кадра, и чтение становится гонкой с рендер-циклом
- * (снимок то пустой, то нет) — поэтому preserveDrawingBuffer: true добавлен
- * в <Canvas gl={{ ... }}> (SceneLayer.tsx) именно ради этого теста. drawImage
- * выбран вместо toDataURL, потому что даёт сырые пиксели без кодирования в
- * PNG на каждый кадр — дешевле для цикла ожидания стабилизации ниже.
+ * PNG декодируется через pngjs, чтобы сравнивать реальные пиксели, а не байты
+ * PNG-потока: кодирование PNG не гарантированно побайтово детерминировано
+ * между запусками (порядок фильтров, версия либы и т.п.), сырые пиксели —
+ * гарантированно.
  */
 async function readSceneFrame(page: Page): Promise<SceneFrame> {
-  return page.evaluate(() => {
-    const canvas = document.querySelector('.scene-layer canvas') as HTMLCanvasElement;
-    const snapshot = document.createElement('canvas');
-    snapshot.width = canvas.width;
-    snapshot.height = canvas.height;
-    const ctx = snapshot.getContext('2d')!;
-    ctx.drawImage(canvas, 0, 0);
-    const { data } = ctx.getImageData(0, 0, snapshot.width, snapshot.height);
+  const buffer = await page.locator('.scene-layer canvas').screenshot();
+  const { data } = PNG.sync.read(buffer);
+  return { data, length: data.length };
+}
 
-    // Сэмплируем с шагом, не каждый пиксель: изображение большое, а для
-    // сигнатуры и проверки монохромности достаточно выборки. Шаг — взаимно
-    // простое с четырьмя число пикселей, чтобы не попадать в один и тот же
-    // столбец кадра из-за совпадения с шириной канваса.
-    const STEP = 4 * 977;
-    let signature = '';
-    let first: [number, number, number] | null = null;
-    let monochrome = true;
-    for (let i = 0; i < data.length; i += STEP) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      signature += [r, g, b].map((c) => c.toString(16).padStart(2, '0')).join('');
-      if (first === null) {
-        first = [r, g, b];
-      } else if (Math.abs(r - first[0]) + Math.abs(g - first[1]) + Math.abs(b - first[2]) > 10) {
-        monochrome = false;
-      }
+/** Кадр не одноцветный: среди сэмплов есть пара с разницей выше шума. */
+function isMonochrome(frame: SceneFrame): boolean {
+  let first: [number, number, number] | null = null;
+  for (let i = 0; i < frame.length; i += SAMPLE_STEP) {
+    const sample: [number, number, number] = [
+      frame.data[i]!,
+      frame.data[i + 1]!,
+      frame.data[i + 2]!,
+    ];
+    if (first === null) {
+      first = sample;
+      continue;
     }
-    return { signature, monochrome };
-  });
+    const diff =
+      Math.abs(sample[0] - first[0]) + Math.abs(sample[1] - first[1]) + Math.abs(sample[2] - first[2]);
+    if (diff > 10) return false;
+  }
+  return true;
+}
+
+/** Совпадают ли два кадра с точностью до FRAME_DIFF_THRESHOLD (см. выше). */
+function framesEqual(a: SceneFrame, b: SceneFrame): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += SAMPLE_STEP) {
+    const diff =
+      Math.abs(a.data[i]! - b.data[i]!) +
+      Math.abs(a.data[i + 1]! - b.data[i + 1]!) +
+      Math.abs(a.data[i + 2]! - b.data[i + 2]!);
+    if (diff > FRAME_DIFF_THRESHOLD) return false;
+  }
+  return true;
 }
 
 /**
  * Ждёт, пока кадр канваса перестанет меняться между последовательными
  * снимками. Камера сглаживает движение экспоненциально (см. stepCamera.ts) —
  * формально это никогда не завершается, поэтому ждём практической остановки
- * (две одинаковые сигнатуры подряд), а не фиксированную паузу: на CI под
- * программным рендерером swiftshader кадр может стабилизироваться заметно
- * дольше, чем на GPU у разработчика.
+ * (два одинаковых в пределах порога кадра подряд), а не фиксированную паузу:
+ * на CI под программным рендерером swiftshader кадр может стабилизироваться
+ * заметно дольше, чем на GPU у разработчика.
  */
 async function waitForStableFrame(page: Page): Promise<SceneFrame> {
   let previous: SceneFrame | undefined;
   for (let attempt = 0; attempt < 40; attempt += 1) {
     const frame = await readSceneFrame(page);
-    if (previous?.signature === frame.signature) return frame;
+    if (previous && framesEqual(previous, frame)) return frame;
     previous = frame;
     await page.waitForTimeout(150);
   }
   throw new Error('кадр канваса не стабилизировался за отведённое время');
+}
+
+/**
+ * `.scene-layer` лежит ниже по z-index, чем `main` (см. styles.css, Р2 в
+ * спеке: HTML-проекция резюме в DOM всегда, а не только как fallback) — это
+ * осознанное решение, но из-за него скриншот канваса Playwright содержит не
+ * только то, что нарисовал WebGL, а весь композит экрана в границах канваса,
+ * включая текст резюме, лежащий поверх. Без скрытия текста «кадр не
+ * одноцветный» был бы истинным всегда — из-за текста, а не из-за сцены — и
+ * не заметил бы мутацию «пустая сцена»: маскировка проверена практически при
+ * разработке теста, см. final-fix-report.md.
+ *
+ * Скрытие через `visibility: hidden`, а не `display: none`: `display: none`
+ * убрал бы `main` из потока документа, `document.documentElement.scrollHeight`
+ * схлопнулся бы до высоты вьюпорта, и прокрутка в конец страницы (нужна
+ * тесту движения камеры) перестала бы что-либо прокручивать.
+ */
+async function withHiddenResumeText<T>(page: Page, run: () => Promise<T>): Promise<T> {
+  await page.evaluate(() => {
+    document.querySelector('main')!.style.visibility = 'hidden';
+  });
+  try {
+    return await run();
+  } finally {
+    await page.evaluate(() => {
+      document.querySelector('main')!.style.visibility = '';
+    });
+  }
 }
 
 test('резюме читается при отключённом JavaScript', async ({ browser }) => {
@@ -224,9 +277,9 @@ test('сцена рисует не только фон: кадр канваса 
   await page.goto('/');
   await expect(page.locator('.scene-layer canvas')).toHaveCount(1, { timeout: 15_000 });
 
-  const frame = await waitForStableFrame(page);
+  const frame = await withHiddenResumeText(page, () => waitForStableFrame(page));
 
-  expect(frame.monochrome, 'кадр канваса одноцветный — сетка и станции не нарисовались').toBe(
+  expect(isMonochrome(frame), 'кадр канваса одноцветный — сетка и станции не нарисовались').toBe(
     false,
   );
 });
@@ -245,15 +298,17 @@ test('камера движется: кадр при прокрутке в ко�
   await page.goto('/');
   await expect(page.locator('.scene-layer canvas')).toHaveCount(1, { timeout: 15_000 });
 
-  const start = await waitForStableFrame(page);
-
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  const end = await waitForStableFrame(page);
+  const { start, end } = await withHiddenResumeText(page, async () => {
+    const start = await waitForStableFrame(page);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    const end = await waitForStableFrame(page);
+    return { start, end };
+  });
 
   expect(
-    end.signature,
-    'сигнатура кадра не изменилась после прокрутки в конец — камера не сдвинулась',
-  ).not.toBe(start.signature);
+    framesEqual(start, end),
+    'кадр не изменился (в пределах допуска) после прокрутки в конец — камера не сдвинулась',
+  ).toBe(false);
 });
 
 test('за время загрузки и прокрутки консоль и страница не сообщают об ошибках', async ({

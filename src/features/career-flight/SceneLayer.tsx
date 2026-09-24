@@ -46,13 +46,6 @@ export default function SceneLayer() {
         dpr={[1, 1.75]}
         camera={{ fov: 60, near: 0.1, far: 400 }}
         style={{ pointerEvents: 'none' }}
-        // preserveDrawingBuffer нужен исключительно для e2e (см.
-        // e2e/smoke.spec.ts): без него `drawImage`/`toDataURL` с канваса
-        // читают буфер, который WebGL волен очистить сразу после композитинга
-        // кадра, и чтение становится гонкой с рендер-циклом (снимок то есть,
-        // то пуст). Сцена лёгкая (примитив-заглушка на станцию, сетка), лишняя
-        // копия буфера на композитинг для неё не заметна на бюджете кадра.
-        gl={{ preserveDrawingBuffer: true }}
       >
         <Suspense fallback={null}>
           <CareerScene />
