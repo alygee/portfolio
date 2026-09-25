@@ -18,8 +18,14 @@ vi.mock('lenis', () => ({
     destroy() {}
   },
 }));
-vi.mock('@/features/career-flight/SceneLayer', () => ({
+// Счётчик доказывает, что подмена применилась. Путь в `vi.mock` — просто
+// строка: после переноса модуля по старому пути подменять нечего, App грузит
+// настоящий SceneLayer, резюме остаётся в DOM и тест зеленеет даже без
+// границы ошибок.
+const brokenScene = vi.hoisted(() => ({ renders: 0 }));
+vi.mock('@/features/career-flight/scene/SceneLayer', () => ({
   default: () => {
+    brokenScene.renders += 1;
     throw new Error('чанк сцены не загрузился');
   },
 }));
@@ -37,6 +43,7 @@ describe('App при падении 3D-слоя', () => {
       await Promise.resolve();
     });
 
+    expect(brokenScene.renders).toBeGreaterThan(0);
     const heading = screen.getByRole('heading', { level: 1 });
     expect(heading).toHaveTextContent('Альберт Аллагулов');
     expect(screen.getByText(/Образование/)).toBeInTheDocument();

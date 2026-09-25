@@ -10,7 +10,7 @@ import './styles.css';
 // где допустим импорт SceneLayer вне его собственного поддерева: он динамический
 // (`lazy(() => import(...))`), поэтому three не попадёт в главный чанк.
 // oxlint-disable-next-line no-restricted-imports
-const SceneLayer = lazy(() => import('@/features/career-flight/SceneLayer'));
+const SceneLayer = lazy(() => import('@/features/career-flight/scene/SceneLayer'));
 
 export default function App() {
   const sceneEnabled = useSceneEnabled();

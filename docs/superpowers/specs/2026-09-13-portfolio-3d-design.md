@@ -101,7 +101,8 @@ src/
   content/          # данные резюме + типы (источник правды)
   entities/         # job, skill, route: типы и чистая логика над ними
   features/
-    career-flight/    # сцена A: кривая, станции, CameraRig
+    career-flight/    # сцена A: синхронизация станции с хэшем (главный чанк)
+      scene/          #   ленивое поддерево: кривая, станции, CameraRig, three
     skill-galaxy/     # сцена B: граф, инстансинг узлов, picking
     scroll-bridge/    # Lenis, стор прогресса, синхронизация с хэшем
     resume-document/  # HTML-проекция резюме (Р2)
