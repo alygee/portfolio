@@ -15,7 +15,7 @@ npm run dev         # разработка
 npm run lint        # Oxlint
 npm test            # тесты
 npm run build       # сборка + предрендер в dist/
-npm run check:size  # бюджет главного чанка (<=100 КБ gzip, без three)
+npm run check:size  # бюджеты: главный чанк <=100 КБ gzip без three, ленивые <=300 КБ, без leva
 npm run e2e         # smoke-тесты в браузере (Playwright)
 ```
 
