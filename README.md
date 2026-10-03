@@ -8,16 +8,21 @@ https://alygee.github.io/portfolio/
 - Дизайн: `docs/superpowers/specs/2026-09-13-portfolio-3d-design.md`
 - План фаз 0-1: `docs/superpowers/plans/2026-09-13-portfolio-phases-0-1.md`
 - План фазы 1.5: `docs/superpowers/plans/2026-09-14-portfolio-phase-1-5.md`
+- План фазы 2: `docs/superpowers/plans/2026-09-28-portfolio-phase-2.md`
 
 ```bash
 npm install
 npm run dev         # разработка
 npm run lint        # Oxlint
+npm run typecheck   # tsc: приложение (tsconfig.json) и Node-код (tsconfig.node.json)
 npm test            # тесты
 npm run build       # сборка + предрендер в dist/
 npm run check:size  # бюджеты: главный чанк <=100 КБ gzip без three, ленивые <=300 КБ, без leva
-npm run e2e         # smoke-тесты в браузере (Playwright)
+npm run e2e         # smoke-тесты в браузере (Playwright: Chromium + swiftshader, Firefox)
 ```
+
+В `npm run dev` поверх сцены открываются панель `leva` (туман, свет, цвета
+рельефа) и счётчик кадров; в продакшен-сборку они не попадают.
 
 Суммарный стаж в резюме считается от месяца сборки (вшивается в бандл
 константой, см. `src/shared/lib/now.ts`), поэтому `.github/workflows/deploy.yml`
@@ -30,5 +35,7 @@ npm run e2e         # smoke-тесты в браузере (Playwright)
 - Фаза 1 — скролл ведёт камеру по маршруту мимо четырёх станций: готово.
 - Фаза 1.5 — техдолг: гейт сцены без detect-gpu, наблюдаемость сцены в CI,
   один экземпляр three, Oxlint с запретом импорта three вне сцены: готово.
-- Дальше по спеке: фаза 2 (среда сцены), фаза 3 (граф навыков),
-  фаза 4 (GLSL), фаза 5 (постпроцессинг).
+- Фаза 2 — среда сцены: топографический рельеф одним `InstancedMesh`, туман,
+  полусферический свет, материалы из `sceneConfigStore`, `leva` в разработке.
+- Дальше по спеке: фаза 3 (граф навыков), фаза 4 (GLSL), фаза 5
+  (постпроцессинг).
