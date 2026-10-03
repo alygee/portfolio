@@ -11,6 +11,12 @@ const launchOptions = {
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
+  // Каждый воркер Chromium рендерит сцену программно (swiftshader), и с
+  // рельефом кадр стоит ≈230 мс процессорного времени. Шесть воркеров на
+  // 12 ядрах (дефолт — половина ядер) душат друг друга: закрытие контекста
+  // не укладывалось в 30 с. Два — столько же, сколько получает раннер CI
+  // (4 vCPU), так что локальный прогон повторяет условия деплоя.
+  workers: 2,
   use: { baseURL: 'http://localhost:4173/portfolio/' },
   webServer: {
     // В CI dist/ уже собрана и проверена npm run check:size до запуска e2e —

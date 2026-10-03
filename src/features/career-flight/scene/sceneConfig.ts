@@ -9,6 +9,7 @@ export type SceneConfig = {
   hemisphere: { sky: string; ground: string; intensity: number };
   sun: { color: string; intensity: number; position: [number, number, number] };
   station: { color: string; emissiveIntensity: number; roughness: number; metalness: number };
+  terrain: { lowColor: string; highColor: string; roughness: number };
 };
 
 /**
@@ -20,6 +21,7 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   hemisphere: { sky: '#9fb4c8', ground: palette.background, intensity: 0.35 },
   sun: { color: '#ffe8c7', intensity: 1.4, position: [-30, 40, 10] },
   station: { color: palette.accent, emissiveIntensity: 0.35, roughness: 0.35, metalness: 0.1 },
+  terrain: { lowColor: '#131922', highColor: '#2f6b63', roughness: 0.9 },
 };
 
 /**

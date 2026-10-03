@@ -1,5 +1,5 @@
 import ReactThreeTestRenderer from '@react-three/test-renderer';
-import type { Color, Fog, Mesh, MeshStandardMaterial, Scene } from 'three';
+import type { Color, Fog, InstancedMesh, Mesh, MeshStandardMaterial, Object3D, Scene } from 'three';
 import { palette } from '@/shared/config/palette';
 import { displayJobs } from '@/content';
 import { CareerScene } from './CareerScene';
@@ -39,6 +39,18 @@ beforeEach(() => {
 });
 
 describe('CareerScene', () => {
+  it('окружение — один draw call: рельеф инстансирован, отдельные меши только у станций', async () => {
+    const { renderer } = await renderScene();
+    let instanced = 0;
+    let meshes = 0;
+    renderer.scene.instance.traverse((object: Object3D) => {
+      if ((object as InstancedMesh).isInstancedMesh) instanced += 1;
+      else if ((object as Mesh).isMesh) meshes += 1;
+    });
+    expect(instanced).toBe(1);
+    expect(meshes).toBe(displayJobs.length);
+  });
+
   it('туман читается из конфигурации и обновляется при её изменении', async () => {
     const { renderer } = await renderScene();
     const scene = renderer.scene.instance as Scene;
