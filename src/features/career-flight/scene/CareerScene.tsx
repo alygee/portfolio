@@ -1,28 +1,29 @@
-import { displayJobs } from '@/content';
 import { palette } from '@/shared/config/palette';
+import { displayJobs } from '@/content';
 import { CameraRig } from './CameraRig';
 import { StationMarker } from './StationMarker';
 import { route } from './route';
+import { useSceneConfig } from './sceneConfig';
 
 export function CareerScene() {
+  const fog = useSceneConfig((config) => config.fog);
+  const hemisphere = useSceneConfig((config) => config.hemisphere);
+  const sun = useSceneConfig((config) => config.sun);
   const end = route.getPointAt(1);
 
   return (
     <>
       <color attach="background" args={[palette.background]} />
-      <fog attach="fog" args={[palette.background, 30, 160]} />
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[12, 20, 8]} intensity={1.2} />
+      {/* Цвет тумана = цвет фона: геометрия растворяется в фоне, а не в серой дымке. */}
+      <fog attach="fog" args={[palette.background, fog.near, fog.far]} />
+      <hemisphereLight args={[hemisphere.sky, hemisphere.ground, hemisphere.intensity]} />
+      <directionalLight color={sun.color} intensity={sun.intensity} position={sun.position} />
       <CameraRig />
       {displayJobs.map((job, index) => (
         <StationMarker job={job} index={index} key={job.id} />
       ))}
-      {/* Опорная сетка: на фазе 1 она делает движение камеры читаемым.
-          Заменяется настоящим окружением на фазе 2. */}
-      <gridHelper
-        args={[400, 80, '#1d2430', '#141920']}
-        position={[0, -2, end.z / 2]}
-      />
+      {/* Опорная сетка: до Task 9, где её заменяет рельеф. */}
+      <gridHelper args={[400, 80, '#1d2430', '#141920']} position={[0, -2, end.z / 2]} />
     </>
   );
 }

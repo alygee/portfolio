@@ -2,6 +2,7 @@ import { Canvas, useThree } from '@react-three/fiber';
 import { AdaptiveDpr, PerformanceMonitor } from '@react-three/drei';
 import { Suspense } from 'react';
 import { CareerScene } from './CareerScene';
+import { CAMERA } from './sceneConfig';
 
 /**
  * Деградация из спеки §7 работающей цепочкой, а не по отдельности:
@@ -44,7 +45,7 @@ export default function SceneLayer() {
       */}
       <Canvas
         dpr={[1, 1.75]}
-        camera={{ fov: 60, near: 0.1, far: 400 }}
+        camera={{ ...CAMERA }}
         style={{ pointerEvents: 'none' }}
       >
         <Suspense fallback={null}>

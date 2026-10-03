@@ -1,9 +1,10 @@
 import ReactThreeTestRenderer from '@react-three/test-renderer';
-import type { Color, Fog, Scene } from 'three';
+import type { Color, Fog, Mesh, MeshStandardMaterial, Scene } from 'three';
 import { palette } from '@/shared/config/palette';
 import { displayJobs } from '@/content';
 import { CareerScene } from './CareerScene';
 import { stationPosition } from './route';
+import { DEFAULT_SCENE_CONFIG, sceneConfigStore } from './sceneConfig';
 
 /**
  * Композиция сцены — требование спеки §8 («станции монтируются в количестве,
@@ -34,9 +35,28 @@ async function renderScene() {
 
 beforeEach(() => {
   cameraRigMounted.mockClear();
+  sceneConfigStore.setState(DEFAULT_SCENE_CONFIG, true);
 });
 
 describe('CareerScene', () => {
+  it('туман читается из конфигурации и обновляется при её изменении', async () => {
+    const { renderer } = await renderScene();
+    const scene = renderer.scene.instance as Scene;
+    expect((scene.fog as Fog).far).toBe(DEFAULT_SCENE_CONFIG.fog.far);
+    await ReactThreeTestRenderer.act(async () => {
+      sceneConfigStore.setState({ fog: { near: 5, far: 55 } });
+    });
+    expect((scene.fog as Fog).far).toBe(55);
+  });
+
+  it('станции светятся акцентом палитры с интенсивностью из конфигурации', async () => {
+    const { stations } = await renderScene();
+    const mesh = stations[0]!.instance.children.find((child) => (child as Mesh).isMesh) as Mesh;
+    const material = mesh.material as MeshStandardMaterial;
+    expect(material.emissive.getHexString()).toBe(palette.accent.slice(1));
+    expect(material.emissiveIntensity).toBe(DEFAULT_SCENE_CONFIG.station.emissiveIntensity);
+  });
+
   it('фон и туман сцены — цвет фона палитры', async () => {
     const { renderer } = await renderScene();
     const scene = renderer.scene.instance as Scene;

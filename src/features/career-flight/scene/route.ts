@@ -8,6 +8,8 @@ export const LOOK_AHEAD = 8;
 const STATION_SPACING = 22;
 const STATION_RISE = 2.5;
 const STATION_SIDE_OFFSET = 6;
+/** Ребро куба станции. Рельеф (terrain/) держит площадку под станцией ниже её основания. */
+export const STATION_SIZE = 3;
 
 /** Точка маршрута, с которой видна станция с этим индексом. */
 export function cameraWaypoint(index: number): Vector3 {
