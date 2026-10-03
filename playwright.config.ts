@@ -26,5 +26,10 @@ export default defineConfig({
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], launchOptions } },
     { name: 'mobile', use: { ...devices['Pixel 7'], launchOptions } },
+    // Firefox — второй движок. swiftshader-флаги выше относятся только к
+    // Chromium; WebGL в headless Firefox зависит от окружения, поэтому тесты,
+    // требующие смонтированной сцены (@scene), здесь не запускаются. Инвариант
+    // гейта проверяется в любом случае — см. тест «тогда и только тогда».
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] }, grepInvert: /@scene/ },
   ],
 });

@@ -150,6 +150,27 @@ test('фон документа — цвет палитры, общей со с�
   await context.close();
 });
 
+test('сцена монтируется тогда и только тогда, когда браузер даёт WebGL', async ({ page }) => {
+  // Инвариант гейта (спека §7, Р8), независимый от окружения: в Chromium со
+  // swiftshader WebGL есть, и канвас обязан появиться; в браузере без WebGL
+  // канваса быть не должно, а документ обязан остаться. Ветка записывается в
+  // аннотацию, чтобы в отчёте было видно, что именно проверено в Firefox.
+  await page.goto('/');
+  const hasWebGL = await page.evaluate(() => {
+    const canvas = document.createElement('canvas');
+    return (canvas.getContext('webgl2') ?? canvas.getContext('webgl')) !== null;
+  });
+  test.info().annotations.push({ type: 'webgl', description: String(hasWebGL) });
+
+  if (hasWebGL) {
+    await expect(page.locator('.scene-layer canvas')).toHaveCount(1, { timeout: 15_000 });
+  } else {
+    await page.waitForTimeout(1500);
+    await expect(page.locator('canvas')).toHaveCount(0);
+  }
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+});
+
 test('deep link ведёт к секции работы', async ({ page }) => {
   await page.goto('#mplat');
   await expect(page.locator('#mplat')).toBeInViewport();
@@ -224,13 +245,13 @@ test('нарушений доступности нет', async ({ page }) => {
   expect(violations.map((v) => v.id)).toEqual([]);
 });
 
-test('3D-слой монтируется, и канвас ровно один', async ({ page }) => {
+test('3D-слой монтируется, и канвас ровно один', { tag: '@scene' }, async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('.scene-layer canvas')).toHaveCount(1, { timeout: 15_000 });
   await expect(page.locator('canvas')).toHaveCount(1);
 });
 
-test('канвас не перехватывает клики по ссылке резюме', async ({ page, context }) => {
+test('канвас не перехватывает клики по ссылке резюме', { tag: '@scene' }, async ({ page, context }) => {
   // .scene-layer растянут на весь вьюпорт (position: fixed; inset: 0), поэтому
   // любая ссылка в шапке резюме геометрически лежит поверх канваса. Проверяем
   // не CSS-декларацию pointer-events сама по себе (см. ниже, почему её всё
@@ -272,14 +293,14 @@ test('канвас не перехватывает клики по ссылке 
   await expect(page.locator('.scene-layer canvas')).toHaveCSS('pointer-events', 'none');
 });
 
-test('прокрутка до конца доводит хэш до последней работы', async ({ page }) => {
+test('прокрутка до конца доводит хэш до последней работы', { tag: '@scene' }, async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('.scene-layer canvas')).toHaveCount(1, { timeout: 15_000 });
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   await expect.poll(() => new URL(page.url()).hash, { timeout: 10_000 }).toBe('#amazingcat');
 });
 
-test('сцена рисует не только фон: кадр канваса не одноцветный', async ({ page }) => {
+test('сцена рисует не только фон: кадр канваса не одноцветный', { tag: '@scene' }, async ({ page }) => {
   // До swiftshader это было непроверяемо (WebGL недоступен в headless-CI без
   // GPU), а после — проверялось только «канвас есть в DOM», не «канвас что-то
   // нарисовал». Чёрный кадр или несобравшийся материал прошли бы предыдущую
@@ -297,7 +318,7 @@ test('сцена рисует не только фон: кадр канваса 
   );
 });
 
-test('камера движется: кадр при прокрутке в конец отличается от начального', async ({ page }) => {
+test('камера движется: кадр при прокрутке в конец отличается от начального', { tag: '@scene' }, async ({ page }) => {
   // Юнит-тесты CameraRig двигают камеру через @react-three/test-renderer —
   // фейковый рендерер, который ничего не рисует. Замёрзшая камера (например,
   // если camera.position.copy перестанет вызываться) прошла бы их и все
@@ -324,7 +345,7 @@ test('камера движется: кадр при прокрутке в ко�
   ).toBe(false);
 });
 
-test('за время загрузки и прокрутки консоль и страница не сообщают об ошибках', async ({
+test('за время загрузки и прокрутки консоль и страница не сообщают об ошибках', { tag: '@scene' }, async ({
   page,
 }) => {
   // Закрывает целый класс невидимых отказов: расхождение гидрации, ворнинги
@@ -357,7 +378,7 @@ test('за время загрузки и прокрутки консоль и �
   expect(pageErrors, `необработанные ошибки страницы: ${pageErrors.join('; ')}`).toEqual([]);
 });
 
-test('заголовок резюме физически лежит поверх канваса (z-index), не только под pointer-events', async ({
+test('заголовок резюме физически лежит поверх канваса (z-index), не только под pointer-events', { tag: '@scene' }, async ({
   page,
 }) => {
   // После того как pointer-events: none на канвасе стал действующим (см.
