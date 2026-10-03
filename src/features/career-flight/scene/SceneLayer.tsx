@@ -1,8 +1,14 @@
 import { Canvas, useThree } from '@react-three/fiber';
 import { AdaptiveDpr, PerformanceMonitor } from '@react-three/drei';
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import { CareerScene } from './CareerScene';
 import { CAMERA } from './sceneConfig';
+
+// Только в разработке. Условие проверяется при сборке: в проде
+// import.meta.env.DEV — литерал false, ветка и чанк панели исчезают. Статический
+// импорт под тем же условием не вырезался бы (у leva нет sideEffects: false,
+// спека §3.3).
+const DevPanel = import.meta.env.DEV ? lazy(() => import('./debug/DevPanel')) : null;
 
 /**
  * Деградация из спеки §7 работающей цепочкой, а не по отдельности:
@@ -52,6 +58,11 @@ export default function SceneLayer() {
           <CareerScene />
         </Suspense>
         <AdaptiveQuality />
+        {DevPanel && (
+          <Suspense fallback={null}>
+            <DevPanel />
+          </Suspense>
+        )}
       </Canvas>
     </div>
   );
