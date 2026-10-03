@@ -2,7 +2,7 @@ import { act, render, renderHook } from '@testing-library/react';
 import { displayJobs } from '@/content';
 import { useStationHash } from '@/features/career-flight/useStationHash';
 import { ResumeDocument } from '@/features/resume-document/ResumeDocument';
-import { progressStore, setProgress } from '@/features/scroll-bridge/progressStore';
+import { progressStore, setProgress } from '@/entities/route/progressStore';
 
 /**
  * Инвариант порядка отображения: станция с индексом N — это N-я секция работы

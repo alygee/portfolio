@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { displayJobs } from '@/content';
 import { stationProgress } from '@/entities/route/progress';
-import { progressStore } from './progressStore';
+import { progressStore } from '@/entities/route/progressStore';
 import { useScrollProgress } from './useScrollProgress';
 
 const SECTION_IDS = displayJobs.map((job) => job.id);

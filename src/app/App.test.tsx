@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { displayJobs } from '@/content';
 import { stationProgress } from '@/entities/route/progress';
-import { progressStore } from '@/features/scroll-bridge/progressStore';
+import { progressStore } from '@/entities/route/progressStore';
 import App from './App';
 
 beforeEach(() => {

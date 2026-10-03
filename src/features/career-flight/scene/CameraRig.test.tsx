@@ -2,7 +2,7 @@ import ReactThreeTestRenderer from '@react-three/test-renderer';
 import { useThree } from '@react-three/fiber';
 import { Profiler, type ProfilerOnRenderCallback } from 'react';
 import type { Camera } from 'three';
-import { progressStore, setProgress } from '@/features/scroll-bridge/progressStore';
+import { progressStore, setProgress } from '@/entities/route/progressStore';
 import { CameraRig } from './CameraRig';
 import { progressToCamera } from './route';
 

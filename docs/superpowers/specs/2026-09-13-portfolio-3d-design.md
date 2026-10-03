@@ -99,14 +99,15 @@ WebGL или при `prefers-reduced-motion: reduce` канвас не
 src/
   app/              # композиция приложения, провайдеры, роутинг по хэшу
   content/          # данные резюме + типы (источник правды)
-  entities/         # job, skill, route: типы и чистая логика над ними
+  entities/         # job, skill, route: типы, чистая логика и стор прогресса маршрута
   features/
     career-flight/    # сцена A: синхронизация станции с хэшем (главный чанк)
       scene/          #   ленивое поддерево: кривая, станции, CameraRig, three
     skill-galaxy/     # сцена B: граф, инстансинг узлов, picking
-    scroll-bridge/    # Lenis, стор прогресса, синхронизация с хэшем
+    scroll-bridge/    # Lenis и нативный скролл → прогресс маршрута
     resume-document/  # HTML-проекция резюме (Р2)
   shared/           # ui, hooks (useSceneEnabled), lib, конфиг сцены
+tooling/            # код, исполняемый в Node при сборке (плагины Vite)
 ```
 
 ### 3.3 Стек

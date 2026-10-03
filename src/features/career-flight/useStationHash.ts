@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { displayJobs } from '@/content';
-import { progressStore, setProgress } from '@/features/scroll-bridge/progressStore';
+import { progressStore, setProgress } from '@/entities/route/progressStore';
 // Именно `@/entities/route/progress`, а не `./route`: этот хук зовётся из
 // `App` безусловно, в том числе когда сцена не смонтирована, то есть попадает
 // в главный чанк. `./route` тянет за собой `three` через модульный синглтон

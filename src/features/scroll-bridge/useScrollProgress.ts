@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { displayJobs } from '@/content';
-import { setProgress } from './progressStore';
+import { setProgress } from '@/entities/route/progressStore';
 import { readSectionOffsets, sectionsToProgress } from './scrollProgress';
 
 /** Порядок тот же, что у станций маршрута: см. `displayJobs`. */

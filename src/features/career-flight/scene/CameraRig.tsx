@@ -1,7 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import { Vector3 } from 'three';
-import { progressStore } from '@/features/scroll-bridge/progressStore';
+import { progressStore } from '@/entities/route/progressStore';
 import { progressToCamera } from './route';
 import { stepCamera } from './stepCamera';
 
