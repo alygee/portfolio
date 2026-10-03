@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
-import { singleThreeInstance } from './src/shared/lib/singleThreeInstancePlugin';
+import { singleThreeInstance } from './tooling/singleThreeInstancePlugin';
 import { currentMonthIso } from './src/shared/lib/now';
 
 const resolvePath = (path: string) => fileURLToPath(new URL(path, import.meta.url));

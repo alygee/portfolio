@@ -1,0 +1,32 @@
+{
+  // Всё, что исполняется в Node, а не в браузере: конфиги, сборочные плагины,
+  // скрипты после сборки, e2e. Отдельно от tsconfig.json, чтобы типы Node не
+  // протекали в код приложения. DOM нужен e2e: колбэки page.evaluate
+  // исполняются в странице.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "allowJs": true,
+    "checkJs": true,
+    "types": ["node", "vitest/globals"],
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": [
+    "tooling",
+    "e2e",
+    "scripts",
+    "playwright.config.ts",
+    "vite.config.ts",
+    "src/vite-env.d.ts"
+  ],
+  // prerender.mjs импортирует артефакты dist-ssr/, которых до сборки нет,
+  // а проверка типов идёт до сборки. Файл — три строки склейки.
+  "exclude": ["scripts/prerender.mjs"]
+}

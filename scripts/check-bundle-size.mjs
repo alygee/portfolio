@@ -17,6 +17,7 @@ const THREE_MARKER = 'WebGLRenderer';
 // маркера были в нём.
 const LEVA_MARKERS = ['leva__panel__dragged', '__levaInput'];
 
+/** @param {string} code */
 const gzipKb = (code) => gzipSync(code).length / 1024;
 
 const html = await readFile('dist/index.html', 'utf8');

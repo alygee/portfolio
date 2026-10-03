@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build && npm run build:ssr && node scripts/prerender.mjs",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
+    "build": "npm run typecheck && vite build && npm run build:ssr && node scripts/prerender.mjs",
     "build:ssr": "vite build --ssr --outDir dist-ssr",
     "preview": "vite preview",
     "test": "vitest run",
