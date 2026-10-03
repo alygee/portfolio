@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { PNG } from 'pngjs';
+import { palette } from '../src/shared/config/palette';
 
 type SceneFrame = { data: Buffer; length: number };
 
@@ -134,6 +135,18 @@ test('резюме читается при отключённом JavaScript', a
   // Стаж считается от даты сборки — точное число месяцев меняется каждый
   // месяц, поэтому проверяем шаблон, а не конкретное значение.
   await expect(page.getByText(/Опыт — \d+ (год|года|лет)/)).toBeVisible();
+  await context.close();
+});
+
+test('фон документа — цвет палитры, общей со сценой, и без JavaScript', async ({ browser }) => {
+  // Фон сцены и фон документа задаются одной строкой palette.background.
+  // Проверяется итог в браузере: если плагин палитры отключат или
+  // переименуют переменную, у body пропадёт фон.
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  await page.goto('/');
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(palette.background.slice(i, i + 2), 16));
+  await expect(page.locator('body')).toHaveCSS('background-color', `rgb(${r}, ${g}, ${b})`);
   await context.close();
 });
 

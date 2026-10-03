@@ -1,4 +1,6 @@
 import ReactThreeTestRenderer from '@react-three/test-renderer';
+import type { Color, Fog, Scene } from 'three';
+import { palette } from '@/shared/config/palette';
 import { displayJobs } from '@/content';
 import { CareerScene } from './CareerScene';
 import { stationPosition } from './route';
@@ -35,6 +37,14 @@ beforeEach(() => {
 });
 
 describe('CareerScene', () => {
+  it('фон и туман сцены — цвет фона палитры', async () => {
+    const { renderer } = await renderScene();
+    const scene = renderer.scene.instance as Scene;
+    const expected = palette.background.slice(1);
+    expect((scene.background as Color).getHexString()).toBe(expected);
+    expect((scene.fog as Fog).color.getHexString()).toBe(expected);
+  });
+
   it('монтирует ровно по одной станции на каждую работу', async () => {
     const { stations } = await renderScene();
     expect(stations).toHaveLength(displayJobs.length);

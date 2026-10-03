@@ -2,13 +2,15 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
 import { singleThreeInstance } from './tooling/singleThreeInstancePlugin';
+import { paletteStyle } from './tooling/paletteStyle';
+import { palette } from './src/shared/config/palette';
 import { currentMonthIso } from './src/shared/lib/now';
 
 const resolvePath = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
 export default defineConfig(({ isSsrBuild, command }) => ({
   base: '/portfolio/',
-  plugins: [react(), singleThreeInstance({ requireThree: !isSsrBuild })],
+  plugins: [paletteStyle(palette), react(), singleThreeInstance({ requireThree: !isSsrBuild })],
   resolve: {
     alias: { '@': resolvePath('./src') },
     // Один экземпляр three на всё приложение. Сегодня stats-gl в compiled коде

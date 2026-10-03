@@ -1,4 +1,5 @@
 import { displayJobs } from '@/content';
+import { palette } from '@/shared/config/palette';
 import { CameraRig } from './CameraRig';
 import { StationMarker } from './StationMarker';
 import { route } from './route';
@@ -8,8 +9,8 @@ export function CareerScene() {
 
   return (
     <>
-      <color attach="background" args={['#0d0f14']} />
-      <fog attach="fog" args={['#0d0f14', 30, 160]} />
+      <color attach="background" args={[palette.background]} />
+      <fog attach="fog" args={[palette.background, 30, 160]} />
       <ambientLight intensity={0.4} />
       <directionalLight position={[12, 20, 8]} intensity={1.2} />
       <CameraRig />

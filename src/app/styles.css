@@ -1,9 +1,9 @@
+/* Цветовые переменные (--bg, --fg, --muted, --accent) здесь не объявлены:
+   их вставляет в index.html плагин tooling/paletteStyle.ts из
+   src/shared/config/palette.ts — того же источника, из которого берёт цвета
+   3D-сцена. */
 :root {
   color-scheme: dark;
-  --bg: #0d0f14;
-  --fg: #e8e6e1;
-  --muted: #8d8a84;
-  --accent: #7dd3c0;
 }
 * { box-sizing: border-box; }
 body {
