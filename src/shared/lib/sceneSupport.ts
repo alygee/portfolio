@@ -22,7 +22,12 @@ export function shouldEnableScene(support: SceneSupport): boolean {
 export function detectWebGL(): boolean {
   try {
     const canvas = document.createElement('canvas');
-    return canvas.getContext('webgl2') !== null || canvas.getContext('webgl') !== null;
+    const context = canvas.getContext('webgl2') ?? canvas.getContext('webgl');
+    if (context === null) return false;
+    // Пробный контекст сразу отдаётся обратно: браузер ограничивает число
+    // живых WebGL-контекстов, а этот иначе жил бы до сборки мусора.
+    context.getExtension('WEBGL_lose_context')?.loseContext();
+    return true;
   } catch {
     return false;
   }

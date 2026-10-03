@@ -50,9 +50,9 @@ describe('useSceneEnabled', () => {
     vi.restoreAllMocks();
     vi.resetModules();
     mockMatchMedia(false);
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
-      {} as unknown as RenderingContext,
-    );
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      getExtension: () => null,
+    } as unknown as RenderingContext);
     ({ useSceneEnabled } = await import('./useSceneEnabled'));
   });
 
