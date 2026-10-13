@@ -4,6 +4,7 @@ import { Suspense, lazy } from 'react';
 import { useSceneState } from '@/entities/scene-mode/sceneStore';
 import { CareerScene } from '@/features/career-flight/scene/CareerScene';
 import { CAMERA } from '@/features/career-flight/scene/sceneConfig';
+import { SkillHall } from '@/features/skill-galaxy/scene/SkillHall';
 import { SceneReady } from './SceneReady';
 
 // Только в разработке. Условие проверяется при сборке: в проде
@@ -66,6 +67,7 @@ export default function SceneLayer() {
       >
         <Suspense fallback={null}>
           <CareerScene />
+          <SkillHall />
           <SceneReady />
         </Suspense>
         <AdaptiveQuality />
