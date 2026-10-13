@@ -1,10 +1,12 @@
 import ReactThreeTestRenderer from '@react-three/test-renderer';
 import { useThree } from '@react-three/fiber';
 import { Profiler, type ProfilerOnRenderCallback } from 'react';
-import type { Camera } from 'three';
+import { Vector3, type Camera } from 'three';
 import { progressStore, setProgress } from '@/entities/route/progressStore';
+import { INITIAL_SCENE_STATE } from '@/entities/scene-mode/sceneMode';
+import { sceneStore } from '@/entities/scene-mode/sceneStore';
 import { CameraRig } from './CameraRig';
-import { progressToCamera } from './route';
+import { HALL_CENTER_POINT, HALL_DOCK_POINT, progressToCamera } from './route';
 
 function CameraSpy({ onCamera }: { onCamera: (camera: Camera) => void }) {
   const camera = useThree((state) => state.camera);
@@ -28,6 +30,8 @@ describe('CameraRig', () => {
     progressStore.setState({ progress: 0 });
   });
 
+  afterEach(() => sceneStore.setState(INITIAL_SCENE_STATE, true));
+
   it('ставит камеру в начало маршрута на первом кадре', async () => {
     const { renderer, getCamera } = await mount();
     await renderer.advanceFrames(1, 0.016);
@@ -49,6 +53,22 @@ describe('CameraRig', () => {
     await renderer.advanceFrames(240, 0.016);
     const middle = progressToCamera(0.5).position;
     expect(getCamera().position.distanceTo(middle)).toBeLessThan(0.5);
+  });
+
+  it('у зала стоит в точке стыковки и смотрит в центр зала', async () => {
+    progressStore.setState({ progress: 1 });
+    sceneStore.setState({ ...INITIAL_SCENE_STATE, mode: 'docked' }, true);
+    const { renderer, getCamera } = await mount();
+    await renderer.advanceFrames(240, 0.016);
+
+    const camera = getCamera();
+    expect(camera.position.distanceTo(HALL_DOCK_POINT)).toBeLessThan(1e-3);
+    // На прогрессе 1 касательная маршрута смотрит вверх по подъёму (≈45°),
+    // поэтому без режима стыковки скалярное произведение было бы ≈0.7.
+    const forward = new Vector3();
+    camera.getWorldDirection(forward);
+    const toCenter = HALL_CENTER_POINT.clone().sub(camera.position).normalize();
+    expect(forward.dot(toCenter)).toBeGreaterThan(0.999);
   });
 
   it('читает прогресс императивно: не подписывается на progressStore', async () => {

@@ -1,7 +1,10 @@
+import { useFrame } from '@react-three/fiber';
 import { useLayoutEffect, useRef } from 'react';
 import { Color, Matrix4, type InstancedMesh } from 'three';
+import { sceneStore } from '@/entities/scene-mode/sceneStore';
 import type { GraphNode } from '@/entities/skill/graph';
 import type { Vec3 } from '@/shared/lib/vec3';
+import { instanceScale } from './hallScale';
 import { nodeColor } from './hallColors';
 
 type Props = {
@@ -18,6 +21,12 @@ type Props = {
  */
 export function NodeInstances({ nodes, positions, radius, shape, name }: Props) {
   const mesh = useRef<InstancedMesh>(null);
+  // Масштаб, записанный в матрицу инстанса в прошлый раз: матрица
+  // переписывается только у изменившихся узлов (обычно — 1–3 за кадр).
+  const scales = useRef<number[]>([]);
+  // Время пульсации копится из delta кадра, а не из clock: тест с
+  // advanceFrames шагает delta детерминированно, а clock идёт по часам.
+  const time = useRef(0);
 
   useLayoutEffect(() => {
     const instanced = mesh.current!;
@@ -34,7 +43,28 @@ export function NodeInstances({ nodes, positions, radius, shape, name }: Props) 
     // Как у рельефа: сфера, посчитанная до записи матриц, описывает единичную
     // геометрию в начале координат, и отсечение прятало бы весь зал.
     instanced.computeBoundingSphere();
+    scales.current = nodes.map(() => 1);
   }, [nodes, positions, radius]);
+
+  useFrame((_, delta) => {
+    time.current += delta;
+    const instanced = mesh.current;
+    if (!instanced) return;
+    const state = sceneStore.getState();
+    const matrix = new Matrix4();
+    let changed = false;
+    nodes.forEach((node, index) => {
+      const scale = instanceScale(node, state, time.current);
+      if (scale === scales.current[index]) return;
+      scales.current[index] = scale;
+      changed = true;
+      const p = positions.get(node.id)!;
+      const size = radius * scale;
+      matrix.makeScale(size, size, size).setPosition(p.x, p.y, p.z);
+      instanced.setMatrixAt(index, matrix);
+    });
+    if (changed) instanced.instanceMatrix.needsUpdate = true;
+  });
 
   return (
     <instancedMesh ref={mesh} args={[undefined, undefined, nodes.length]} name={name}>

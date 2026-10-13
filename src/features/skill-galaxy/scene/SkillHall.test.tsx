@@ -11,9 +11,13 @@ import {
   type Object3D,
 } from 'three';
 import { HALL_CENTER } from '@/entities/route/anchors';
+import { INITIAL_SCENE_STATE } from '@/entities/scene-mode/sceneMode';
+import { sceneStore } from '@/entities/scene-mode/sceneStore';
 import { ARC_SEGMENTS } from './hallGeometry';
 import { hallGraph, hallPositions, hubNodes, skillNodes } from './hallData';
-import { SkillHall } from './SkillHall';
+import { INITIAL_SPIN } from './spin';
+import { spinStore } from './spinStore';
+import { NODE_RADIUS, SkillHall } from './SkillHall';
 
 async function renderHall() {
   const renderer = await ReactThreeTestRenderer.create(<SkillHall />);
@@ -31,6 +35,37 @@ function instancePosition(mesh: InstancedMesh, index: number): Vector3 {
 }
 
 describe('SkillHall', () => {
+  beforeEach(() => {
+    sceneStore.setState(INITIAL_SCENE_STATE, true);
+    spinStore.setState({ spin: INITIAL_SPIN, dragging: false });
+  });
+
+  const scaleOf = (mesh: InstancedMesh, id: string) => {
+    const matrix = new Matrix4();
+    mesh.getMatrixAt(skillNodes.findIndex((node) => node.id === id), matrix);
+    const scale = new Vector3();
+    matrix.decompose(new Vector3(), new Quaternion(), scale);
+    return scale.x;
+  };
+
+  it('в полёте зал неподвижен', async () => {
+    const { renderer, byName } = await renderHall();
+    await renderer.advanceFrames(30, 0.05);
+    expect(byName('skill-hall-spin').rotation.y).toBe(0);
+    expect(scaleOf(byName<InstancedMesh>('hall-skills'), 'python')).toBeCloseTo(NODE_RADIUS, 6);
+  });
+
+  it('в стыковке зал вращается, изучаемый узел пульсирует', async () => {
+    sceneStore.setState({ ...INITIAL_SCENE_STATE, mode: 'docked' }, true);
+    const { renderer, byName } = await renderHall();
+    await renderer.advanceFrames(10, 0.05);
+    expect(byName('skill-hall-spin').rotation.y).toBeGreaterThan(0);
+    const mesh = byName<InstancedMesh>('hall-skills');
+    const first = scaleOf(mesh, 'python');
+    await renderer.advanceFrames(3, 0.05);
+    expect(scaleOf(mesh, 'python')).not.toBeCloseTo(first, 5);
+  });
+
   it('зал добавляет ровно 4 draw call: два InstancedMesh и два LineSegments', async () => {
     const { hall } = await renderHall();
     let instanced = 0;

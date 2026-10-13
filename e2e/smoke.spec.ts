@@ -322,7 +322,7 @@ test('сцена рисует не только фон: кадр канваса 
   );
 });
 
-test('камера движется: кадр при прокрутке в конец отличается от начального', { tag: '@scene' }, async ({ page }) => {
+test('камера движется: кадр у последней станции отличается от начального', { tag: '@scene' }, async ({ page }) => {
   // Юнит-тесты CameraRig двигают камеру через @react-three/test-renderer —
   // фейковый рендерер, который ничего не рисует. Замёрзшая камера (например,
   // если camera.position.copy перестанет вызываться) прошла бы их и все
@@ -332,6 +332,9 @@ test('камера движется: кадр при прокрутке в ко�
   // тест — единственный, что смотрит на сам кадр. Красный при поломке:
   // временное отключение camera.position.copy в CameraRig.tsx красит эту
   // строку — см. final-fix-report.md, мутация «замёрзшая камера».
+  // У зала (конец документа) галактика вращается и кадр не стабилизируется
+  // никогда, поэтому второй кадр берётся у последней станции — там сцена
+  // неподвижна (spin.ts: в полёте зал стоит).
   // Бюджет с запасом под программный рендерер: с рельефом (≈5000 столбиков)
   // swiftshader считает кадр ≈230 мс (4 fps против 60 без рельефа), и один
   // снимок канваса ждёт очередь кадров ≈6 с. Замер 2026-10-03; на GPU
@@ -342,7 +345,7 @@ test('камера движется: кадр при прокрутке в ко�
 
   const { start, end } = await withHiddenResumeText(page, async () => {
     const start = await waitForStableFrame(page);
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.evaluate(() => document.getElementById('amazingcat')!.scrollIntoView());
     const end = await waitForStableFrame(page);
     return { start, end };
   });
