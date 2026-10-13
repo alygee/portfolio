@@ -126,6 +126,66 @@ async function withHiddenResumeText<T>(page: Page, run: () => Promise<T>): Promi
   }
 }
 
+/**
+ * Доля сэмплов, изменившихся сильнее шума. В зале кадр не стабилизируется
+ * никогда (пульсирует «изучаю»), поэтому «изменился ли кадр» здесь — не
+ * framesEqual, а сравнение доли изменившихся точек с фоном пульсации.
+ */
+function changedFraction(a: SceneFrame, b: SceneFrame): number {
+  let changed = 0;
+  let total = 0;
+  for (let i = 0; i < a.length; i += SAMPLE_STEP) {
+    total += 1;
+    const diff =
+      Math.abs(a.data[i]! - b.data[i]!) +
+      Math.abs(a.data[i + 1]! - b.data[i + 1]!) +
+      Math.abs(a.data[i + 2]! - b.data[i + 2]!);
+    if (diff > FRAME_DIFF_THRESHOLD) changed += 1;
+  }
+  return changed / total;
+}
+
+/**
+ * До конца документа — к стыковке; кнопка появляется при готовой сцене.
+ * Прокручиваем сам документ и проверяем `toBeInViewport` ДО щелчка:
+ * `locator.click()` молча прокручивает элемент в видимую область, и тест
+ * проходил бы, пока посетитель до кнопки не дотянется.
+ */
+async function dockAtHall(page: Page) {
+  await page.goto('/');
+  await expect(page.locator('.scene-layer canvas')).toHaveCount(1, { timeout: 15_000 });
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  const button = page.getByRole('button', { name: 'Открыть зал навыков' });
+  await expect(button).toBeVisible({ timeout: 20_000 });
+  await expect(button).toBeInViewport();
+  return button;
+}
+
+async function openHall(page: Page) {
+  const button = await dockAtHall(page);
+  await button.click();
+  await expect(page.getByRole('dialog', { name: 'Зал навыков' })).toBeVisible();
+  return button;
+}
+
+/** Документ после закрытия зала: виден, не заблокирован и реально прокручивается. */
+async function expectDocumentUsable(page: Page) {
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.locator('main')).toHaveCSS('visibility', 'visible');
+  await expect(page.locator('main')).toHaveCSS('opacity', '1');
+  await expect(page.locator('html')).not.toHaveClass(/hall-open/);
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).not.toBe('hidden');
+  // Настоящая прокрутка от пользователя (клавиша), а не window.scrollTo,
+  // который работает и под overflow: hidden.
+  // Нажатие повторяем: под нагрузкой первое может прийти раньше, чем
+  // фокус вернулся на кнопку и документ снова прокручивается.
+  const before = await page.evaluate(() => window.scrollY);
+  await expect(async () => {
+    await page.keyboard.press('PageUp');
+    expect(await page.evaluate(() => window.scrollY)).toBeLessThan(before);
+  }).toPass({ timeout: 15_000 });
+}
+
 test('резюме читается при отключённом JavaScript', async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
@@ -457,21 +517,198 @@ test('заголовок резюме физически лежит поверх
   );
 });
 
-test('кнопка зала достижима без прокрутки Playwright и Esc возвращает позицию @scene', { tag: '@scene' }, async ({ page }) => {
-  test.setTimeout(90_000);
+test('кнопка зала есть тогда и только тогда, когда браузер даёт WebGL', async ({ page }) => {
+  test.setTimeout(90_000); // в полном прогоне Firefox рисует программно и под нагрузкой поднимает сцену дольше 20 с
+  // Все проекты, включая Firefox без WebGL: там кнопки быть не должно, а
+  // раздел навыков со статусами обязан остаться полным.
   await page.goto('/');
-  await expect(page.locator('.scene-layer canvas')).toHaveCount(1, { timeout: 15_000 });
+  const hasWebGL = await page.evaluate(() => {
+    const canvas = document.createElement('canvas');
+    return (canvas.getContext('webgl2') ?? canvas.getContext('webgl')) !== null;
+  });
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   const button = page.getByRole('button', { name: 'Открыть зал навыков' });
-  await expect(button).toBeVisible({ timeout: 15_000 });
-  await expect(button).toBeInViewport();
-  const before = await page.evaluate(() => window.scrollY);
+  if (hasWebGL) {
+    await expect(button).toBeVisible({ timeout: 45_000 });
+  } else {
+    await page.waitForTimeout(1500);
+    await expect(button).toHaveCount(0);
+  }
+  await expect(page.locator('#skills')).toContainText('изучаю');
+  await expect(page.locator('#skills')).toContainText('Что я переношу в ML');
+});
+
+test('зал: документ гаснет, канвас ловит указатель, прокрутка стоит; Esc всё возвращает', { tag: '@scene' }, async ({ page }) => {
+  test.setTimeout(120_000);
+  const button = await dockAtHall(page);
+  const canvas = page.locator('.scene-layer canvas');
+  // touch-action не наследуется, а R3F кладёт проп style на обёртку вокруг
+  // канваса; действующее значение для касаний складывается по предкам.
+  const canvasWrapper = page.locator('.scene-layer > div').first();
+  const scrollBefore = await page.evaluate(() => window.scrollY);
+  await expect(canvas).toHaveCSS('pointer-events', 'none');
+  await expect(canvasWrapper).toHaveCSS('touch-action', 'auto');
 
   await button.click();
-  await expect(page.getByRole('dialog', { name: 'Зал навыков' })).toBeVisible();
-  expect(await page.evaluate(() => window.scrollY)).toBe(before);
+  await expect(page.getByRole('button', { name: 'Закрыть' })).toBeFocused();
+  // Щелчок по кнопке, уже лежащей во вьюпорте, не должен сдвигать документ.
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
+  await expect(page.locator('main')).toHaveCSS('visibility', 'hidden', { timeout: 15_000 });
+  await expect(canvas).toHaveCSS('pointer-events', 'auto');
+  await expect(canvasWrapper).toHaveCSS('touch-action', 'none');
+  // Пользовательская прокрутка (клавиатура) заблокирована overflow: hidden.
+  await page.keyboard.press('PageUp');
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
 
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeCloseTo(before, 0);
+  await expect(page.locator('main')).toHaveCSS('visibility', 'visible');
+  await expect(canvas).toHaveCSS('pointer-events', 'none');
+  await expect(canvasWrapper).toHaveCSS('touch-action', 'auto');
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeCloseTo(scrollBefore, 0);
+  await expect(button).toBeFocused();
+});
+
+test('«назад» закрывает зал и не уводит со страницы', { tag: '@scene' }, async ({ page }) => {
+  test.setTimeout(120_000);
+  await openHall(page);
+  await page.goBack();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.locator('main')).toHaveCSS('visibility', 'visible');
+  expect(new URL(page.url()).hash).toBe('#skills');
+});
+
+for (const path of ['Esc', 'кнопка «Закрыть»', '«назад»'] as const) {
+  test(`закрытие зала: ${path} возвращает видимый прокручиваемый документ на то же место`, { tag: '@scene' }, async ({ page }) => {
+    test.setTimeout(120_000);
+    await openHall(page);
+    const scrollBefore = await page.evaluate(() => window.scrollY);
+    if (path === 'Esc') await page.keyboard.press('Escape');
+    else if (path === '«назад»') await page.goBack();
+    else await page.getByRole('button', { name: 'Закрыть' }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeCloseTo(scrollBefore, 0);
+    await expectDocumentUsable(page);
+  });
+}
+
+test('щелчок по узлу открывает его карточку', { tag: '@scene' }, async ({ page }) => {
+  // Луч R3F считается синхронно на событии указателя — кадр для этого не
+  // нужен, поэтому перебор точек быстрый даже под swiftshader. Полоса по
+  // центру — вне панелей оверлея (сверху — «Закрыть», снизу — карточка).
+  // Область «Выбранный узел» есть всегда (с подсказкой), так что признак
+  // выбора — заголовок h3 с названием узла, а не видимость области.
+  test.setTimeout(120_000);
+  await openHall(page);
+  const box = (await page.locator('.scene-layer canvas').boundingBox())!;
+  const title = page.getByRole('region', { name: 'Выбранный узел' }).getByRole('heading', { level: 3 });
+  await expect(title).toHaveCount(0);
+  let found = false;
+  for (let row = 9; row <= 21 && !found; row += 1) {
+    for (let col = 3; col <= 27 && !found; col += 1) {
+      await page.mouse.click(box.x + (box.width * col) / 30, box.y + (box.height * row) / 30);
+      found = (await title.count()) > 0;
+    }
+  }
+  expect(found, 'ни один щелчок по сетке точек не попал в узел').toBe(true);
+  await expect(title).not.toHaveText('');
+});
+
+test('стрелки перебирают узлы, ссылка «где применён» ведёт к станции', { tag: '@scene' }, async ({ page }) => {
+  test.setTimeout(120_000);
+  await openHall(page);
+  await page.keyboard.press('ArrowRight');
+  const card = page.getByRole('region', { name: 'Выбранный узел' });
+  await expect(card.getByRole('heading', { level: 3 })).toHaveText('TypeScript');
+  const link = card.getByRole('link').first();
+  const href = (await link.getAttribute('href'))!;
+  expect(href).toMatch(/^#/);
+  await link.click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.locator(href)).toBeInViewport({ timeout: 10_000 });
+  await expect(page.locator('main')).toHaveCSS('visibility', 'visible');
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).not.toBe('hidden');
+});
+
+test('в открытом зале нарушений доступности нет', { tag: '@scene' }, async ({ page }) => {
+  test.setTimeout(120_000);
+  await openHall(page);
+  // Документ гаснет 0,3 с: на полупрозрачном тексте axe видит ложный
+  // недостаток контраста, а к моменту проверки он уже скрыт от читателей.
+  await expect(page.locator('main')).toHaveCSS('visibility', 'hidden', { timeout: 15_000 });
+  const { violations } = await new AxeBuilder({ page }).analyze();
+  expect(violations.map((v) => v.id)).toEqual([]);
+});
+
+test('у стыковки зал нарисован и вращается', { tag: '@scene' }, async ({ page }) => {
+  // Мутация «зала нет» (убрать <SkillHall /> из SceneLayer) делает два кадра
+  // у стыковки одинаковыми: камера неподвижна, рельеф статичен.
+  test.setTimeout(120_000);
+  await dockAtHall(page);
+  const { first, second } = await withHiddenResumeText(page, async () => {
+    await page.waitForTimeout(6000); // камера доворачивает взгляд (stepCamera, 4/с)
+    const first = await readSceneFrame(page);
+    await page.waitForTimeout(2000);
+    return { first, second: await readSceneFrame(page) };
+  });
+  expect(isMonochrome(second)).toBe(false);
+  expect(framesEqual(first, second), 'кадр у стыковки не меняется — зал не вращается или не нарисован').toBe(false);
+});
+
+test('перетаскивание вращает зал', { tag: '@scene' }, async ({ page }) => {
+  test.setTimeout(120_000);
+  await openHall(page);
+  const box = (await page.locator('.scene-layer canvas').boundingBox())!;
+  await page.waitForTimeout(2000);
+  const before = await readSceneFrame(page);
+  await page.waitForTimeout(1000);
+  const idle = await readSceneFrame(page);
+  const background = changedFraction(before, idle); // только пульсация «изучаю»
+
+  const y = box.y + box.height / 2;
+  await page.mouse.move(box.x + box.width * 0.3, y);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.7, y, { steps: 12 });
+  await page.mouse.up();
+  await page.waitForTimeout(1500); // инерция гаснет (SPIN.damping = 3/с)
+  const after = await readSceneFrame(page);
+
+  // Зал занимает часть широкого десктопного кадра: на практике поворот
+  // меняет 4% сэмплов на desktop и 10% на mobile при фоне 0, поэтому порог 2%.
+  expect(changedFraction(idle, after)).toBeGreaterThan(Math.max(0.02, background * 3));
+});
+
+test('касание вне зала не перехватывается канвасом (mobile)', { tag: '@scene' }, async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile', 'нужен сенсорный проект');
+  test.setTimeout(120_000);
+  await dockAtHall(page);
+  const canvas = page.locator('.scene-layer canvas');
+  const canvasWrapper = page.locator('.scene-layer > div').first();
+  await expect(canvasWrapper).toHaveCSS('touch-action', 'auto');
+  await expect(canvas).toHaveCSS('pointer-events', 'none');
+
+  // Хит-тест по сетке: ни одна точка экрана не отдаёт касание канвасу.
+  const hitCanvas = await page.evaluate(() => {
+    const target = document.querySelector('.scene-layer canvas');
+    for (let row = 1; row < 10; row += 1) {
+      for (let col = 1; col < 10; col += 1) {
+        const element = document.elementFromPoint((innerWidth * col) / 10, (innerHeight * row) / 10);
+        if (element === target) return true;
+      }
+    }
+    return false;
+  });
+  expect(hitCanvas, 'касание попадает в канвас вне режима исследования').toBe(false);
+
+  // Настоящий жест: свайп вниз по документу прокручивает его вверх.
+  const before = await page.evaluate(() => window.scrollY);
+  const cdp = await page.context().newCDPSession(page);
+  const x = 200;
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y: 300 }] });
+  for (let step = 1; step <= 10; step += 1) {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: 300 + step * 30 }] });
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(before);
 });

@@ -3,10 +3,35 @@ import { dispatchScene, useSceneState } from '@/entities/scene-mode/sceneStore';
 
 export const HALL_OPEN_CLASS = 'hall-open';
 const HISTORY_MARKER = 'skillHall';
+const HOLD_MS = 500;
+const USER_SCROLL = ['wheel', 'touchstart', 'keydown'] as const;
 
 function ownsTopHistoryEntry(): boolean {
   const state: unknown = window.history.state;
   return typeof state === 'object' && state !== null && HISTORY_MARKER in state;
+}
+
+/**
+ * «Назад»: браузер восстанавливает позицию прежней записи уже ПОСЛЕ popstate
+ * (наблюдалось: 2725 → 1703), и до или после нашего scrollTo — зависит от
+ * нагрузки. Поэтому короткое время возвращаем позицию на каждом кадре, пока
+ * посетитель сам не начал прокручивать.
+ */
+function holdScroll(y: number): void {
+  const until = performance.now() + HOLD_MS;
+  const stop = () => {
+    done = true;
+    for (const type of USER_SCROLL) window.removeEventListener(type, stop);
+  };
+  let done = false;
+  for (const type of USER_SCROLL) window.addEventListener(type, stop, { passive: true });
+  const tick = () => {
+    if (done) return;
+    if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
+    if (performance.now() < until) window.requestAnimationFrame(tick);
+    else stop();
+  };
+  window.requestAnimationFrame(tick);
 }
 
 /**
@@ -54,6 +79,7 @@ export function useHallDocument(): void {
         window.history.back();
       } else {
         window.history.scrollRestoration = restoration;
+        holdScroll(scrollY);
       }
     };
   }, [exploring]);

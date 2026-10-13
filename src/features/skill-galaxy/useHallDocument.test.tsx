@@ -56,6 +56,24 @@ describe('useHallDocument', () => {
     expect(back).not.toHaveBeenCalled();
   });
 
+  it('«назад»: позицию, которую браузер восстановил после popstate, возвращаем на место', () => {
+    vi.useFakeTimers();
+    vi.spyOn(window.history, 'back').mockImplementation(() => {});
+    renderHook(() => useHallDocument());
+    openHall();
+    act(() => {
+      window.history.replaceState(null, '');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    scrollTo.mockClear();
+    vi.stubGlobal('scrollY', 1703); // браузер сдвинул позицию
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+    expect(scrollTo).toHaveBeenCalledWith(0, 1234);
+    vi.useRealTimers();
+  });
+
   it('закрытие кнопкой убирает свою запись истории', () => {
     const back = vi.spyOn(window.history, 'back').mockImplementation(() => {});
     renderHook(() => useHallDocument());
