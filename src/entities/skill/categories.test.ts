@@ -1,5 +1,5 @@
 import { skills } from '@/content';
-import { CATEGORY_LABELS, CATEGORY_ORDER } from './categories';
+import { CATEGORY_DOMAIN, CATEGORY_LABELS, CATEGORY_ORDER } from './categories';
 
 /**
  * `CATEGORY_LABELS` типизирован как `Record<SkillCategory, string>`, поэтому
@@ -17,5 +17,15 @@ describe('CATEGORY_ORDER', () => {
     const used = [...new Set(skills.map((skill) => skill.category))];
     const missing = used.filter((category) => !CATEGORY_ORDER.includes(category));
     expect(missing).toEqual([]);
+  });
+});
+
+describe('CATEGORY_DOMAIN', () => {
+  it('ML-категории — домен ml, прежние — web', () => {
+    const ml = Object.entries(CATEGORY_DOMAIN)
+      .filter(([, domain]) => domain === 'ml')
+      .map(([category]) => category)
+      .sort();
+    expect(ml).toEqual(['llm', 'ml-classic', 'ml-data', 'ml-deep', 'mlops']);
   });
 });
