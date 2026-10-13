@@ -1,6 +1,6 @@
-import { useEffect, useRef, type KeyboardEvent, type MouseEvent } from 'react';
+import { useEffect, useRef, type MouseEvent } from 'react';
 import { useStore } from 'zustand';
-import { dispatchScene, useSceneState } from '@/entities/scene-mode/sceneStore';
+import { dispatchScene, sceneStore, useSceneState } from '@/entities/scene-mode/sceneStore';
 import { hallGraph } from './hallData';
 import { hoverStore } from './hallInteraction';
 import { describeNode } from './nodeDetails';
@@ -38,29 +38,44 @@ export function HallOverlay() {
     if (exploring) closeButton.current?.focus();
   }, [exploring]);
 
+  // Стрелки слушает окно, а не диалог: после щелчка по канвасу фокус уходит
+  // на body, и обработчик на диалоге их бы не получил. Исключение — поля
+  // ввода, где стрелки двигают курсор.
+  useEffect(() => {
+    if (!exploring) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+      ) {
+        return;
+      }
+      const direction = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+      if (direction === 0) return;
+      event.preventDefault();
+      const { selectedId: current } = sceneStore.getState();
+      const index = current === null ? (direction === 1 ? -1 : 0) : ORDER.indexOf(current);
+      dispatchScene({
+        type: 'select',
+        id: ORDER[(index + direction + ORDER.length) % ORDER.length]!,
+      });
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [exploring]);
+
   if (!exploring) return null;
 
   const details = selectedId === null ? null : describeNode(selectedId);
 
-  const step = (direction: 1 | -1) => {
-    const index = selectedId === null ? (direction === 1 ? -1 : 0) : ORDER.indexOf(selectedId);
-    dispatchScene({ type: 'select', id: ORDER[(index + direction + ORDER.length) % ORDER.length]! });
-  };
-  const onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'ArrowRight') {
-      event.preventDefault();
-      step(1);
-    } else if (event.key === 'ArrowLeft') {
-      event.preventDefault();
-      step(-1);
-    }
-  };
-
   return (
-    <div className="hall-overlay" role="dialog" aria-modal="true" aria-labelledby="hall-title" onKeyDown={onKeyDown}>
+    <div className="hall-overlay" role="dialog" aria-modal="true" aria-labelledby="hall-title">
       <header className="hall-overlay__panel">
         <h2 id="hall-title">Зал навыков</h2>
-        <p className="hall-overlay__hint">Перетаскивайте, чтобы вращать. ← → — перебрать узлы. Esc — выйти.</p>
+        <p className="hall-overlay__hint">
+          Перетаскивайте, чтобы вращать. ← → — перебрать узлы. Esc — выйти.
+        </p>
         <button ref={closeButton} type="button" onClick={() => dispatchScene({ type: 'closeHall' })}>
           Закрыть
         </button>

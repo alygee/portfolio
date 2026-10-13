@@ -14,7 +14,7 @@ export function OpenHallButton() {
   const previous = useRef(mode);
 
   useEffect(() => {
-    if (previous.current === 'exploring' && mode === 'docked') button.current?.focus();
+    if (previous.current === 'exploring' && mode === 'docked') button.current?.focus({ preventScroll: true });
     previous.current = mode;
   }, [mode]);
 

@@ -62,6 +62,12 @@ main { position: relative; z-index: 1; transition: opacity .3s ease; }
 html.hall-open { overflow: hidden; }
 html.hall-open main { opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility 0s linear .3s; }
 .open-hall {
+  /* Кнопка появляется лишь после стыковки, когда верх #skills уже над
+     экраном: sticky держит её в видимой области на всём участке стыковки. */
+  position: sticky;
+  top: 1rem;
+  z-index: 3;
+  display: block;
   margin: 0 0 1.5rem;
   padding: .6rem 1.1rem;
   font: inherit;

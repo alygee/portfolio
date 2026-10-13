@@ -1,20 +1,20 @@
-import { Canvas, useThree } from "@react-three/fiber";
-import { AdaptiveDpr, PerformanceMonitor } from "@react-three/drei";
-import { Suspense, lazy } from "react";
-import { useSceneState } from "@/entities/scene-mode/sceneStore";
-import { CareerScene } from "@/features/career-flight/scene/CareerScene";
-import { CAMERA } from "@/features/career-flight/scene/sceneConfig";
-import { HallControls } from "@/features/skill-galaxy/scene/HallControls";
-import { HallOverlay } from "@/features/skill-galaxy/scene/HallOverlay";
-import { SkillHall } from "@/features/skill-galaxy/scene/SkillHall";
-import { SceneReady } from "./SceneReady";
+import { Canvas, useThree } from '@react-three/fiber';
+import { AdaptiveDpr, PerformanceMonitor } from '@react-three/drei';
+import { Suspense, lazy } from 'react';
+import { useSceneState } from '@/entities/scene-mode/sceneStore';
+import { CareerScene } from '@/features/career-flight/scene/CareerScene';
+import { CAMERA } from '@/features/career-flight/scene/sceneConfig';
+import { HallControls } from '@/features/skill-galaxy/scene/HallControls';
+import { HallOverlay } from '@/features/skill-galaxy/scene/HallOverlay';
+import { SkillHall } from '@/features/skill-galaxy/scene/SkillHall';
+import { SceneReady } from './SceneReady';
 
 // Только в разработке. Условие проверяется при сборке: в проде
 // import.meta.env.DEV — литерал false, ветка и чанк панели исчезают. Статический
 // импорт под тем же условием не вырезался бы (у leva нет sideEffects: false,
 // спека §3.3).
 const DevPanel = import.meta.env.DEV
-  ? lazy(() => import("@/features/career-flight/scene/debug/DevPanel"))
+  ? lazy(() => import('@/features/career-flight/scene/debug/DevPanel'))
   : null;
 
 /**
@@ -49,7 +49,7 @@ export default function SceneLayer() {
   // Указатель и жесты канвас получает только в режиме исследования зала:
   // в остальное время документ поверх сцены должен оставаться кликабельным,
   // а касание — прокручивать страницу (фаза 1.5; спека зала §5.5).
-  const exploring = useSceneState((state) => state.mode === "exploring");
+  const exploring = useSceneState((state) => state.mode === 'exploring');
 
   return (
     <>
@@ -66,8 +66,8 @@ export default function SceneLayer() {
           dpr={[1, 1.75]}
           camera={{ ...CAMERA }}
           style={{
-            pointerEvents: exploring ? "auto" : "none",
-            touchAction: exploring ? "none" : "auto",
+            pointerEvents: exploring ? 'auto' : 'none',
+            touchAction: exploring ? 'none' : 'auto',
           }}
         >
           <Suspense fallback={null}>

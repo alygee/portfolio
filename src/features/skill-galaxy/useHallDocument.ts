@@ -28,6 +28,11 @@ export function useHallDocument(): void {
       if (event.key === 'Escape') close();
     };
 
+    // history.back() при закрытии заставил бы браузер «восстановить» позицию
+    // записи, и она расходится с сохранённой (наблюдалось: 2725 → 1703).
+    // Позицию возвращаем сами, поэтому восстановление браузера на это время выключено.
+    const restoration = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'manual';
     root.classList.add(HALL_OPEN_CLASS);
     window.history.pushState({ [HISTORY_MARKER]: true }, '');
     window.addEventListener('popstate', close);
@@ -40,7 +45,16 @@ export function useHallDocument(): void {
       window.scrollTo(0, scrollY);
       // Закрыли не «назад» — своя запись осталась сверху; убираем её, иначе
       // следующее «назад» посетителя ничего видимого не сделает.
-      if (ownsTopHistoryEntry()) window.history.back();
+      if (ownsTopHistoryEntry()) {
+        window.addEventListener(
+          'popstate',
+          () => window.setTimeout(() => (window.history.scrollRestoration = restoration), 0),
+          { once: true },
+        );
+        window.history.back();
+      } else {
+        window.history.scrollRestoration = restoration;
+      }
     };
   }, [exploring]);
 }

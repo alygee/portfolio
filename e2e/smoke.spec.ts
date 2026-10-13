@@ -456,3 +456,22 @@ test('заголовок резюме физически лежит поверх
     true,
   );
 });
+
+test('кнопка зала достижима без прокрутки Playwright и Esc возвращает позицию @scene', { tag: '@scene' }, async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto('/');
+  await expect(page.locator('.scene-layer canvas')).toHaveCount(1, { timeout: 15_000 });
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  const button = page.getByRole('button', { name: 'Открыть зал навыков' });
+  await expect(button).toBeVisible({ timeout: 15_000 });
+  await expect(button).toBeInViewport();
+  const before = await page.evaluate(() => window.scrollY);
+
+  await button.click();
+  await expect(page.getByRole('dialog', { name: 'Зал навыков' })).toBeVisible();
+  expect(await page.evaluate(() => window.scrollY)).toBe(before);
+
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeCloseTo(before, 0);
+});

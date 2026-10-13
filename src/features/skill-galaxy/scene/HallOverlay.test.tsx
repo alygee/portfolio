@@ -45,6 +45,16 @@ describe('HallOverlay', () => {
     expect(sceneStore.getState().selectedId).toBe(hallGraph.nodes[hallGraph.nodes.length - 1]!.id);
   });
 
+  it('стрелки работают, когда фокус на body (после щелчка по канвасу)', () => {
+    explore();
+    render(<HallOverlay />);
+    (document.activeElement as HTMLElement).blur();
+    fireEvent.keyDown(document.body, { key: 'ArrowRight' });
+    expect(sceneStore.getState().selectedId).toBe(hallGraph.nodes[0]!.id);
+    fireEvent.keyDown(document.body, { key: 'ArrowRight' });
+    expect(sceneStore.getState().selectedId).toBe(hallGraph.nodes[1]!.id);
+  });
+
   it('карточка навыка: статус, где применён, мосты', () => {
     explore();
     act(() => dispatchScene({ type: 'select', id: 'postgres' }));
