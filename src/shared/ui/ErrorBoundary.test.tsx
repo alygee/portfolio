@@ -41,6 +41,16 @@ describe('ErrorBoundary', () => {
     );
   });
 
+  it('сообщает о падении через onError', () => {
+    const onError = vi.fn();
+    render(
+      <ErrorBoundary onError={onError}>
+        <Boom />
+      </ErrorBoundary>,
+    );
+    expect(onError).toHaveBeenCalledTimes(1);
+  });
+
   it('без ошибки рендерит детей как есть', () => {
     // Без этой проверки границу можно было бы «реализовать» как компонент,
     // который всегда возвращает null.

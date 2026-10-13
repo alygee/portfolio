@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 
-type Props = { children: ReactNode };
+type Props = { children: ReactNode; onError?: () => void };
 type State = { failed: boolean };
 
 /**
@@ -11,6 +11,9 @@ type State = { failed: boolean };
  * Fallback-разметки нет намеренно: единственный нынешний потребитель —
  * фоновый 3D-слой, и правильное поведение при его падении это «страница без
  * сцены», а не сообщение об ошибке поверх резюме.
+ *
+ * `onError` — для потребителя, которому мало «не рендерить ветку»: падение
+ * сцены в открытом зале обязано вернуть документ.
  */
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { failed: false };
@@ -20,6 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
+    this.props.onError?.();
     console.error('Ошибка в изолированной ветке, она не отрендерена:', error);
     if (info.componentStack != null) console.error(info.componentStack);
   }

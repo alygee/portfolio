@@ -1,4 +1,6 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
+import { progressStore } from '@/entities/route/progressStore';
+import { bindProgress, dispatchScene } from '@/entities/scene-mode/sceneStore';
 import { useStationHash } from '@/features/career-flight/useStationHash';
 import { ResumeDocument } from '@/features/resume-document/ResumeDocument';
 import { useScrollProgress } from '@/features/scroll-bridge/useScrollProgress';
@@ -10,7 +12,12 @@ import './styles.css';
 // где допустим импорт SceneLayer вне его собственного поддерева: он динамический
 // (`lazy(() => import(...))`), поэтому three не попадёт в главный чанк.
 // oxlint-disable-next-line no-restricted-imports
-const SceneLayer = lazy(() => import('@/features/career-flight/scene/SceneLayer'));
+const SceneLayer = lazy(() => import('@/widgets/scene/SceneLayer'));
+
+/** Сцена упала — её больше нет: режим исследования закрывается, документ возвращается. */
+function onSceneError() {
+  dispatchScene({ type: 'sceneReady', ready: false });
+}
 
 export default function App() {
   const sceneEnabled = useSceneEnabled();
@@ -19,6 +26,8 @@ export default function App() {
   // пришёл deep link на станцию (иначе вход по '#mplat' сломается).
   useScrollProgress(sceneEnabled);
   useStationHash();
+  // Режим сцены (полёт / стыковка / зал) выводится из прогресса маршрута.
+  useEffect(() => bindProgress(progressStore), []);
 
   return (
     <>
@@ -26,7 +35,7 @@ export default function App() {
         // Граница ошибок обязательна: без неё сбой загрузки чанка сцены
         // размонтировал бы корень вместе с предрендеренным резюме — пустой
         // экран вместо документа.
-        <ErrorBoundary>
+        <ErrorBoundary onError={onSceneError}>
           <Suspense fallback={null}>
             <SceneLayer />
           </Suspense>

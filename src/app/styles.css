@@ -46,9 +46,9 @@ a { color: var(--accent); }
    действующая, а вот pointer-events на самом .scene-layer — нет: @react-three/
    fiber ставит на свою обёртку вокруг <canvas> inline pointer-events: auto,
    который перебивает унаследованное значение; действующая декларация
-   передаётся канвасу через проп `style` в SceneLayer.tsx. Возможно, фаза 3
-   переиспользует этот же проп для picking по узлам графа — решение не
-   принято. */
+   передаётся канвасу через проп `style` в SceneLayer.tsx. В режиме исследования
+   зала навыков SceneLayer переключает этот проп на auto (и touch-action на
+   none) — только на время режима. */
 .scene-layer {
   position: fixed;
   inset: 0;

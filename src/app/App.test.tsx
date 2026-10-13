@@ -1,12 +1,15 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { ROUTE_ANCHOR_IDS } from '@/entities/route/anchors';
 import { stationProgress } from '@/entities/route/progress';
-import { progressStore } from '@/entities/route/progressStore';
+import { progressStore, setProgress } from '@/entities/route/progressStore';
+import { INITIAL_SCENE_STATE } from '@/entities/scene-mode/sceneMode';
+import { sceneStore } from '@/entities/scene-mode/sceneStore';
 import App from './App';
 
 beforeEach(() => {
   window.history.replaceState(null, '', window.location.pathname);
   progressStore.setState({ progress: 0 });
+  sceneStore.setState(INITIAL_SCENE_STATE, true);
 });
 
 describe('App', () => {
@@ -30,5 +33,13 @@ describe('App', () => {
     const expected = stationProgress(ROUTE_ANCHOR_IDS.indexOf('mplat'), ROUTE_ANCHOR_IDS.length);
     expect(expected).toBeGreaterThan(0);
     expect(progressStore.getState().progress).toBe(expected);
+  });
+
+  it('режим сцены следует за прогрессом маршрута', () => {
+    render(<App />);
+    act(() => setProgress(1));
+    expect(sceneStore.getState().mode).toBe('docked');
+    act(() => setProgress(0));
+    expect(sceneStore.getState().mode).toBe('travelling');
   });
 });

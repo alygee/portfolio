@@ -1,14 +1,16 @@
 import { Canvas, useThree } from '@react-three/fiber';
 import { AdaptiveDpr, PerformanceMonitor } from '@react-three/drei';
 import { Suspense, lazy } from 'react';
-import { CareerScene } from './CareerScene';
-import { CAMERA } from './sceneConfig';
+import { useSceneState } from '@/entities/scene-mode/sceneStore';
+import { CareerScene } from '@/features/career-flight/scene/CareerScene';
+import { CAMERA } from '@/features/career-flight/scene/sceneConfig';
+import { SceneReady } from './SceneReady';
 
 // Только в разработке. Условие проверяется при сборке: в проде
 // import.meta.env.DEV — литерал false, ветка и чанк панели исчезают. Статический
 // импорт под тем же условием не вырезался бы (у leva нет sideEffects: false,
 // спека §3.3).
-const DevPanel = import.meta.env.DEV ? lazy(() => import('./debug/DevPanel')) : null;
+const DevPanel = import.meta.env.DEV ? lazy(() => import('@/features/career-flight/scene/debug/DevPanel')) : null;
 
 /**
  * Деградация из спеки §7 работающей цепочкой, а не по отдельности:
@@ -39,6 +41,11 @@ function AdaptiveQuality() {
 
 /** Дефолтный экспорт: слой подгружается через React.lazy, вместе с ним — three. */
 export default function SceneLayer() {
+  // Указатель и жесты канвас получает только в режиме исследования зала:
+  // в остальное время документ поверх сцены должен оставаться кликабельным,
+  // а касание — прокручивать страницу (фаза 1.5; спека зала §5.5).
+  const exploring = useSceneState((state) => state.mode === 'exploring');
+
   return (
     <div className="scene-layer" aria-hidden="true">
       {/*
@@ -52,10 +59,14 @@ export default function SceneLayer() {
       <Canvas
         dpr={[1, 1.75]}
         camera={{ ...CAMERA }}
-        style={{ pointerEvents: 'none' }}
+        style={{
+          pointerEvents: exploring ? 'auto' : 'none',
+          touchAction: exploring ? 'none' : 'auto',
+        }}
       >
         <Suspense fallback={null}>
           <CareerScene />
+          <SceneReady />
         </Suspense>
         <AdaptiveQuality />
         {DevPanel && (

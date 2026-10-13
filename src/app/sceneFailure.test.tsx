@@ -1,4 +1,6 @@
 import { act, render, screen } from '@testing-library/react';
+import { INITIAL_SCENE_STATE } from '@/entities/scene-mode/sceneMode';
+import { sceneStore } from '@/entities/scene-mode/sceneStore';
 import App from './App';
 
 /**
@@ -23,7 +25,7 @@ vi.mock('lenis', () => ({
 // настоящий SceneLayer, резюме остаётся в DOM и тест зеленеет даже без
 // границы ошибок.
 const brokenScene = vi.hoisted(() => ({ renders: 0 }));
-vi.mock('@/features/career-flight/scene/SceneLayer', () => ({
+vi.mock('@/widgets/scene/SceneLayer', () => ({
   default: () => {
     brokenScene.renders += 1;
     throw new Error('чанк сцены не загрузился');
@@ -47,5 +49,22 @@ describe('App при падении 3D-слоя', () => {
     const heading = screen.getByRole('heading', { level: 1 });
     expect(heading).toHaveTextContent('Альберт Аллагулов');
     expect(screen.getByText(/Образование/)).toBeInTheDocument();
+  });
+
+  it('падение сцены в открытом зале возвращает документ', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    sceneStore.setState({ ...INITIAL_SCENE_STATE, mode: 'exploring', sceneReady: true }, true);
+
+    render(<App />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Без onError у границы ошибок режим остался бы `exploring`: документ
+    // скрыт, прокрутка заблокирована, сцены нет — пустой экран. Не `docked`,
+    // а «не exploring»: в jsdom мост скролла публикует прогресс 0, и
+    // `bindProgress` после закрытия зала переводит `docked` в `travelling`.
+    expect(sceneStore.getState().mode).not.toBe('exploring');
   });
 });
