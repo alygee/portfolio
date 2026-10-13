@@ -9,6 +9,7 @@ https://alygee.github.io/portfolio/
 - План фаз 0-1: `docs/superpowers/plans/2026-09-13-portfolio-phases-0-1.md`
 - План фазы 1.5: `docs/superpowers/plans/2026-09-14-portfolio-phase-1-5.md`
 - План фазы 2: `docs/superpowers/plans/2026-09-28-portfolio-phase-2.md`
+- План фазы 3: `docs/superpowers/plans/2026-10-12-skill-hall-phase-3.md`
 
 ```bash
 npm install
@@ -37,5 +38,6 @@ npm run e2e         # smoke-тесты в браузере (Playwright: Chromium
   один экземпляр three, Oxlint с запретом импорта three вне сцены: готово.
 - Фаза 2 — среда сцены: топографический рельеф одним `InstancedMesh`, туман,
   полусферический свет, материалы из `sceneConfigStore`, `leva` в разработке.
-- Дальше по спеке: фаза 3 (граф навыков), фаза 4 (GLSL), фаза 5
-  (постпроцессинг).
+- Фаза 3 — зал навыков: траектория из веба в ML, граф двумя `InstancedMesh` и
+  двумя `LineSegments`, режим исследования (вращение, выбор лучом, карточка).
+- Дальше по спеке: фаза 4 (GLSL), фаза 5 (постпроцессинг).
