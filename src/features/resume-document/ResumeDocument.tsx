@@ -1,10 +1,16 @@
-import { displayJobs, jobs } from '@/content';
+import type { ReactNode } from 'react';
+import { displayJobs, jobs, projects as contentProjects, type Project } from '@/content';
 import { formatMonths, totalExperienceMonths } from '@/entities/job/duration';
 import { currentMonthIso } from '@/shared/lib/now';
 import { JobEntry } from './JobEntry';
+import { ProjectEntry } from './ProjectEntry';
 import { SkillList } from './SkillList';
 
-export function ResumeDocument({ now = currentMonthIso() }: { now?: string } = {}) {
+export function ResumeDocument({
+  now = currentMonthIso(),
+  projects = contentProjects,
+  skillsAction = null,
+}: { now?: string; projects?: readonly Project[]; skillsAction?: ReactNode } = {}) {
   const experience = formatMonths(totalExperienceMonths(jobs, now));
 
   return (
@@ -38,6 +44,15 @@ export function ResumeDocument({ now = currentMonthIso() }: { now?: string } = {
         <JobEntry job={job} now={now} key={job.id} />
       ))}
 
+      {projects.length > 0 && (
+        <section className="projects" aria-labelledby="projects-heading">
+          <h2 id="projects-heading">ML-проекты</h2>
+          {projects.map((project) => (
+            <ProjectEntry project={project} key={project.id} />
+          ))}
+        </section>
+      )}
+
       {/*
         Последний якорь маршрута (`HALL_ANCHOR_ID`): секция в точке обзора —
         камера у зала навыков. id совпадает с `ROUTE_ANCHOR_IDS`, это
@@ -45,6 +60,7 @@ export function ResumeDocument({ now = currentMonthIso() }: { now?: string } = {
       */}
       <section id="skills" aria-labelledby="skills-heading">
         <h2 id="skills-heading">Навыки</h2>
+        {skillsAction}
         <SkillList />
       </section>
 

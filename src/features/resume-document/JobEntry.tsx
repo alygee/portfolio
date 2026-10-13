@@ -6,7 +6,7 @@ const MONTH_NAMES = [
   'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
 ] as const;
 
-function formatIsoMonth(iso: string): string {
+export function formatIsoMonth(iso: string): string {
   const [year, month] = iso.split('-');
   const name = MONTH_NAMES[Number(month) - 1] ?? '';
   return `${name} ${year}`;

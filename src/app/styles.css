@@ -29,8 +29,16 @@ a { color: var(--accent); }
 .job__metrics dt { font-size: .8125rem; color: var(--muted); }
 .job__metrics dd { margin: 0; font-size: 1.25rem; color: var(--accent); }
 .skills { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
-.skills__group h3 { font-size: .8125rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.skills__group h4 { font-size: .8125rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
 .skills__group ul { margin: 0; padding-left: 1.25rem; }
+.skills-domain + .skills-domain { margin-top: 2rem; }
+.skill--planned { color: var(--muted); }
+.skill__status { font-size: .8125rem; color: var(--muted); }
+.skill--learning .skill__status { color: var(--accent); }
+.bridges { margin: 0; padding-left: 1.25rem; }
+.bridge__pair { color: var(--accent); }
+.project { margin-bottom: 2rem; }
+.project__meta, .project__stack { font-size: .875rem; color: var(--muted); }
 
 /* 3D-слой — фон под документом. Кликабельность текста защищена двумя
    независимыми механизмами: z-index (main выше слоя) и pointer-events: none

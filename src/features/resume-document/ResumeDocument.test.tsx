@@ -1,5 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
-import { jobs } from '@/content';
+import { jobs, type Project } from '@/content';
 import { ResumeDocument } from './ResumeDocument';
 
 describe('ResumeDocument', () => {
@@ -60,5 +60,38 @@ describe('ResumeDocument', () => {
     expect(
       within(testingGroup as HTMLElement).queryByText('MapLibre'),
     ).not.toBeInTheDocument();
+  });
+
+  const sampleProject: Project = {
+    id: 'tabular',
+    title: 'Табличная модель',
+    kind: 'project',
+    date: '2027-02',
+    url: 'https://github.com/alygee/tabular',
+    summary: 'Модель оттока.',
+    bullets: ['CatBoost против логистической регрессии.'],
+    stack: ['python'],
+  };
+
+  it('раздела «ML-проекты» нет, пока проектов нет', () => {
+    render(<ResumeDocument now="2026-08" />);
+    expect(screen.queryByRole('heading', { name: 'ML-проекты' })).not.toBeInTheDocument();
+  });
+
+  it('раздел «ML-проекты» появляется с первым проектом и не становится якорем маршрута', () => {
+    const { container } = render(<ResumeDocument now="2026-08" projects={[sampleProject]} />);
+    expect(screen.getByRole('heading', { name: 'ML-проекты' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Табличная модель' })).toHaveAttribute(
+      'href',
+      'https://github.com/alygee/tabular',
+    );
+    // Якоря маршрута — `section[id]`; у раздела проектов id нет.
+    expect(container.querySelector('.projects')!.hasAttribute('id')).toBe(false);
+  });
+
+  it('действие секции «Навыки» рендерится внутри неё', () => {
+    render(<ResumeDocument now="2026-08" skillsAction={<button type="button">действие</button>} />);
+    const section = screen.getByRole('region', { name: 'Навыки' });
+    expect(within(section).getByRole('button', { name: 'действие' })).toBeInTheDocument();
   });
 });
