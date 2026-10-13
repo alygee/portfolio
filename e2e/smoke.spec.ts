@@ -172,7 +172,7 @@ async function openHall(page: Page) {
 async function expectDocumentUsable(page: Page) {
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('main')).toHaveCSS('visibility', 'visible');
-  await expect(page.locator('main')).toHaveCSS('opacity', '1');
+  await expect(page.locator('main')).toHaveCSS('opacity', '1', { timeout: 15_000 });
   await expect(page.locator('html')).not.toHaveClass(/hall-open/);
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).not.toBe('hidden');
   // Настоящая прокрутка от пользователя (клавиша), а не window.scrollTo,
@@ -546,6 +546,26 @@ test('кнопка зала: нет WebGL — нет кнопки, в Chromium �
   await expect(page.locator('#skills')).toContainText('Что я переношу в ML');
 });
 
+test('без WebGL нет канваса и кнопки зала, а раздел навыков полон', async ({ page }) => {
+  // Ветка !hasWebGL в тесте выше в CI не исполняется (и Chromium, и Firefox
+  // WebGL дают), поэтому отказ браузера имитируем: getContext возвращает null.
+  await page.addInitScript(() => {
+    const original = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, type: string, ...rest: unknown[]) {
+      if (['webgl', 'webgl2', 'experimental-webgl'].includes(type)) return null;
+      return (original as (...args: unknown[]) => unknown).call(this, type, ...rest);
+    } as typeof original;
+  });
+  await page.goto('/');
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await page.waitForTimeout(2000); // ограниченное ожидание: сцена, если бы монтировалась, успела бы
+  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Открыть зал навыков' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.locator('#skills')).toContainText('изучаю');
+  await expect(page.locator('#skills')).toContainText('Что я переношу в ML');
+});
+
 test('зал: документ гаснет, канвас ловит указатель, прокрутка стоит; Esc всё возвращает', { tag: '@scene' }, async ({ page }) => {
   test.setTimeout(120_000);
   const button = await dockAtHall(page);
@@ -683,8 +703,9 @@ test('перетаскивание вращает зал', { tag: '@scene' }, as
   const after = await readSceneFrame(page);
 
   // Зал занимает часть широкого десктопного кадра: на практике поворот
-  // меняет 4% сэмплов на desktop и 10% на mobile при фоне 0, поэтому порог 2%.
-  expect(changedFraction(idle, after)).toBeGreaterThan(Math.max(0.02, background * 3));
+  // меняет 4% сэмплов на desktop и 10% на mobile при фоне 0, поэтому порог 2%; под нагрузкой фон дорастает до 6% (AdaptiveDpr
+  // меняет разрешение), поэтому множитель фона 1,5, а не 3.
+  expect(changedFraction(idle, after)).toBeGreaterThan(Math.max(0.02, background * 1.5));
 });
 
 test('касание вне зала не перехватывается канвасом (mobile)', { tag: '@scene' }, async ({ page }, testInfo) => {

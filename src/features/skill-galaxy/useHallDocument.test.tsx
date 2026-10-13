@@ -18,6 +18,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
+  window.history.scrollRestoration = 'auto';
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -56,22 +58,42 @@ describe('useHallDocument', () => {
     expect(back).not.toHaveBeenCalled();
   });
 
-  it('«назад»: позицию, которую браузер восстановил после popstate, возвращаем на место', () => {
+  it('«назад»: режим восстановления остаётся manual внутри popstate и возвращается позже', () => {
     vi.useFakeTimers();
     vi.spyOn(window.history, 'back').mockImplementation(() => {});
+    window.history.scrollRestoration = 'auto';
+    renderHook(() => useHallDocument());
+    openHall();
+    expect(window.history.scrollRestoration).toBe('manual');
+    act(() => {
+      window.history.replaceState(null, '');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    // Закрытие произошло, но браузер ещё восстанавливает позицию: режим не сброшен.
+    expect(sceneStore.getState().mode).toBe('docked');
+    expect(window.history.scrollRestoration).toBe('manual');
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(window.history.scrollRestoration).toBe('auto');
+  });
+
+  it('переоткрытый до сброса зал не теряет режим manual', () => {
+    vi.useFakeTimers();
+    vi.spyOn(window.history, 'back').mockImplementation(() => {});
+    window.history.scrollRestoration = 'auto';
     renderHook(() => useHallDocument());
     openHall();
     act(() => {
       window.history.replaceState(null, '');
       window.dispatchEvent(new PopStateEvent('popstate'));
     });
-    scrollTo.mockClear();
-    vi.stubGlobal('scrollY', 1703); // браузер сдвинул позицию
+    openHall();
     act(() => {
-      vi.advanceTimersByTime(50);
+      vi.advanceTimersByTime(1);
     });
-    expect(scrollTo).toHaveBeenCalledWith(0, 1234);
-    vi.useRealTimers();
+    // Отложенный сброс первого закрытия не должен выключить manual у открытого зала.
+    expect(window.history.scrollRestoration).toBe('manual');
   });
 
   it('закрытие кнопкой убирает свою запись истории', () => {

@@ -3,35 +3,25 @@ import { dispatchScene, useSceneState } from '@/entities/scene-mode/sceneStore';
 
 export const HALL_OPEN_CLASS = 'hall-open';
 const HISTORY_MARKER = 'skillHall';
-const HOLD_MS = 500;
-const USER_SCROLL = ['wheel', 'touchstart', 'keydown'] as const;
+
+// Отложенный сброс режима восстановления прокрутки. Зал могут открыть снова
+// раньше, чем он сработает: тогда его надо отменить, а исходный режим —
+// унаследовать, иначе manual остался бы у посетителя навсегда.
+let pendingReset: { timer: number; value: ScrollRestoration } | null = null;
+
+function scheduleRestoration(value: ScrollRestoration): void {
+  pendingReset = {
+    value,
+    timer: window.setTimeout(() => {
+      pendingReset = null;
+      window.history.scrollRestoration = value;
+    }, 0),
+  };
+}
 
 function ownsTopHistoryEntry(): boolean {
   const state: unknown = window.history.state;
   return typeof state === 'object' && state !== null && HISTORY_MARKER in state;
-}
-
-/**
- * «Назад»: браузер восстанавливает позицию прежней записи уже ПОСЛЕ popstate
- * (наблюдалось: 2725 → 1703), и до или после нашего scrollTo — зависит от
- * нагрузки. Поэтому короткое время возвращаем позицию на каждом кадре, пока
- * посетитель сам не начал прокручивать.
- */
-function holdScroll(y: number): void {
-  const until = performance.now() + HOLD_MS;
-  const stop = () => {
-    done = true;
-    for (const type of USER_SCROLL) window.removeEventListener(type, stop);
-  };
-  let done = false;
-  for (const type of USER_SCROLL) window.addEventListener(type, stop, { passive: true });
-  const tick = () => {
-    if (done) return;
-    if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
-    if (performance.now() < until) window.requestAnimationFrame(tick);
-    else stop();
-  };
-  window.requestAnimationFrame(tick);
 }
 
 /**
@@ -56,7 +46,12 @@ export function useHallDocument(): void {
     // history.back() при закрытии заставил бы браузер «восстановить» позицию
     // записи, и она расходится с сохранённой (наблюдалось: 2725 → 1703).
     // Позицию возвращаем сами, поэтому восстановление браузера на это время выключено.
-    const restoration = window.history.scrollRestoration;
+    let restoration = window.history.scrollRestoration;
+    if (pendingReset !== null) {
+      window.clearTimeout(pendingReset.timer);
+      restoration = pendingReset.value;
+      pendingReset = null;
+    }
     window.history.scrollRestoration = 'manual';
     root.classList.add(HALL_OPEN_CLASS);
     window.history.pushState({ [HISTORY_MARKER]: true }, '');
@@ -73,13 +68,16 @@ export function useHallDocument(): void {
       if (ownsTopHistoryEntry()) {
         window.addEventListener(
           'popstate',
-          () => window.setTimeout(() => (window.history.scrollRestoration = restoration), 0),
+          () => scheduleRestoration(restoration),
           { once: true },
         );
         window.history.back();
       } else {
-        window.history.scrollRestoration = restoration;
-        holdScroll(scrollY);
+        // «Назад»: режим сбрасываем не внутри popstate, а позже. Браузер
+        // восстанавливает позицию прежней записи уже после обработчиков, и при
+        // сброшенном в 'auto' режиме она перебивала нашу (2725 → 1703).
+        // Измерено e2e: с отложенным сбросом holdScroll-подобная страховка не нужна.
+        scheduleRestoration(restoration);
       }
     };
   }, [exploring]);
