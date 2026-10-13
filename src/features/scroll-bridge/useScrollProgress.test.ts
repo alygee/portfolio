@@ -2,6 +2,8 @@ import { act, renderHook } from '@testing-library/react';
 import { ROUTE_ANCHOR_IDS } from '@/entities/route/anchors';
 import { stationProgress } from '@/entities/route/progress';
 import { progressStore } from '@/entities/route/progressStore';
+import { INITIAL_SCENE_STATE } from '@/entities/scene-mode/sceneMode';
+import { sceneStore } from '@/entities/scene-mode/sceneStore';
 import { useScrollProgress } from './useScrollProgress';
 
 const SECTION_IDS = ROUTE_ANCHOR_IDS;
@@ -179,5 +181,20 @@ describe('useScrollProgress', () => {
 
     scrollTo(SECTION_OFFSETS[1]!);
     expect(progressStore.getState().progress).toBeCloseTo(stationProgress(1, COUNT), 10);
+  });
+  it('в зале навыков инерционный скролл останавливается, после закрытия — продолжается', async () => {
+    const instance = { on: vi.fn(), raf: vi.fn(), destroy: vi.fn(), stop: vi.fn(), start: vi.fn() };
+    LenisCtor.mockImplementationOnce(function () {
+      return instance;
+    });
+    mockMatchMedia({ coarse: false });
+    renderHook(() => useScrollProgress(SCENE_MOUNTED));
+    await flushMicrotasks();
+
+    act(() => sceneStore.setState({ ...INITIAL_SCENE_STATE, mode: 'exploring', sceneReady: true }, true));
+    expect(instance.stop).toHaveBeenCalledTimes(1);
+    act(() => sceneStore.setState({ ...INITIAL_SCENE_STATE, mode: 'docked', sceneReady: true }, true));
+    expect(instance.start).toHaveBeenCalled();
+    sceneStore.setState(INITIAL_SCENE_STATE, true);
   });
 });

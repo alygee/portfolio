@@ -2,6 +2,8 @@ import { Suspense, lazy, useEffect } from 'react';
 import { progressStore } from '@/entities/route/progressStore';
 import { bindProgress, dispatchScene } from '@/entities/scene-mode/sceneStore';
 import { useStationHash } from '@/features/career-flight/useStationHash';
+import { OpenHallButton } from '@/features/skill-galaxy/OpenHallButton';
+import { useHallDocument } from '@/features/skill-galaxy/useHallDocument';
 import { ResumeDocument } from '@/features/resume-document/ResumeDocument';
 import { useScrollProgress } from '@/features/scroll-bridge/useScrollProgress';
 import { useSceneEnabled } from '@/shared/hooks/useSceneEnabled';
@@ -28,6 +30,7 @@ export default function App() {
   useStationHash();
   // Режим сцены (полёт / стыковка / зал) выводится из прогресса маршрута.
   useEffect(() => bindProgress(progressStore), []);
+  useHallDocument();
 
   return (
     <>
@@ -42,7 +45,7 @@ export default function App() {
         </ErrorBoundary>
       )}
       <main>
-        <ResumeDocument />
+        <ResumeDocument skillsAction={<OpenHallButton />} />
       </main>
     </>
   );

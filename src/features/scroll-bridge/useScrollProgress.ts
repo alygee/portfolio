@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { ROUTE_ANCHOR_IDS } from '@/entities/route/anchors';
 import { setProgress } from '@/entities/route/progressStore';
+import { sceneStore } from '@/entities/scene-mode/sceneStore';
 import { readSectionOffsets, sectionsToProgress } from './scrollProgress';
 
 /** Порядок тот же, что у путевых точек маршрута: см. `ROUTE_ANCHOR_IDS`. */
@@ -61,7 +62,10 @@ export function useScrollProgress(sceneMounted: boolean): void {
       };
     }
 
-    let lenis: { raf: (time: number) => void; destroy: () => void } | undefined;
+    let lenis:
+      | { raf: (time: number) => void; destroy: () => void; stop: () => void; start: () => void }
+      | undefined;
+    let unsubscribeMode: (() => void) | undefined;
     let frame = 0;
     let cancelled = false;
 
@@ -76,12 +80,19 @@ export function useScrollProgress(sceneMounted: boolean): void {
       };
       frame = requestAnimationFrame(raf);
       lenis = instance;
+      // Зал навыков блокирует прокрутку через overflow: hidden, но Lenis
+      // крутит документ сам, мимо overflow, — его нужно остановить явно.
+      unsubscribeMode = sceneStore.subscribe((state) => {
+        if (state.mode === 'exploring') instance.stop();
+        else instance.start();
+      });
     })();
 
     return () => {
       cancelled = true;
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', onResize);
+      unsubscribeMode?.();
       lenis?.destroy();
     };
   }, [sceneMounted]);

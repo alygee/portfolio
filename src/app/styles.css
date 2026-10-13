@@ -55,7 +55,23 @@ a { color: var(--accent); }
   z-index: 0;
   pointer-events: none;
 }
-main { position: relative; z-index: 1; }
+main { position: relative; z-index: 1; transition: opacity .3s ease; }
+/* Режим исследования зала: документ гаснет, но остаётся в потоке —
+   visibility, а не display: none, иначе схлопнется высота документа и
+   потеряется позиция прокрутки (урок фазы 1.5). */
+html.hall-open { overflow: hidden; }
+html.hall-open main { opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility 0s linear .3s; }
+.open-hall {
+  margin: 0 0 1.5rem;
+  padding: .6rem 1.1rem;
+  font: inherit;
+  color: var(--bg);
+  background: var(--accent);
+  border: 0;
+  border-radius: .4rem;
+  cursor: pointer;
+}
+.open-hall:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
 
 .station-label {
   font: 600 14px/1 ui-sans-serif, system-ui, sans-serif;

@@ -1,4 +1,5 @@
 import { act, render, screen } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
 import { ROUTE_ANCHOR_IDS } from '@/entities/route/anchors';
 import { stationProgress } from '@/entities/route/progress';
 import { progressStore, setProgress } from '@/entities/route/progressStore';
@@ -41,5 +42,22 @@ describe('App', () => {
     expect(sceneStore.getState().mode).toBe('docked');
     act(() => setProgress(0));
     expect(sceneStore.getState().mode).toBe('travelling');
+  });
+
+  it('кнопка зала появляется в стыковке при готовой сцене', () => {
+    render(<App />);
+    act(() => {
+      setProgress(1);
+      sceneStore.setState({ ...sceneStore.getState(), sceneReady: true });
+    });
+    expect(screen.getByRole('button', { name: 'Открыть зал навыков' })).toBeInTheDocument();
+  });
+
+  it('в предрендере кнопки зала нет, даже если на клиенте зал уже готов', () => {
+    // Иначе гидрация разойдётся: сервер рендерит начальное состояние стора.
+    sceneStore.setState({ ...INITIAL_SCENE_STATE, mode: 'docked', sceneReady: true }, true);
+    const html = renderToString(<App />);
+    expect(html).not.toContain('Открыть зал навыков');
+    expect(html).toContain('id="skills"');
   });
 });
