@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { displayJobs } from '@/content';
+import { ROUTE_ANCHOR_IDS } from '@/entities/route/anchors';
 import { stationProgress } from '@/entities/route/progress';
 import { progressStore } from '@/entities/route/progressStore';
 import App from './App';
@@ -27,8 +27,7 @@ describe('App', () => {
 
     render(<App />);
 
-    const index = displayJobs.findIndex((job) => job.id === 'mplat');
-    const expected = stationProgress(index, displayJobs.length);
+    const expected = stationProgress(ROUTE_ANCHOR_IDS.indexOf('mplat'), ROUTE_ANCHOR_IDS.length);
     expect(expected).toBeGreaterThan(0);
     expect(progressStore.getState().progress).toBe(expected);
   });

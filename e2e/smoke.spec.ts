@@ -293,11 +293,11 @@ test('канвас не перехватывает клики по ссылке 
   await expect(page.locator('.scene-layer canvas')).toHaveCSS('pointer-events', 'none');
 });
 
-test('прокрутка до конца доводит хэш до последней работы', { tag: '@scene' }, async ({ page }) => {
+test('прокрутка до конца доводит хэш до зала навыков', { tag: '@scene' }, async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('.scene-layer canvas')).toHaveCount(1, { timeout: 15_000 });
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  await expect.poll(() => new URL(page.url()).hash, { timeout: 10_000 }).toBe('#amazingcat');
+  await expect.poll(() => new URL(page.url()).hash, { timeout: 10_000 }).toBe('#skills');
 });
 
 test('сцена рисует не только фон: кадр канваса не одноцветный', { tag: '@scene' }, async ({ page }) => {

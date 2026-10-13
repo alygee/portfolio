@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react';
-import { displayJobs } from '@/content';
+import { ROUTE_ANCHOR_IDS } from '@/entities/route/anchors';
 import { stationProgress } from '@/entities/route/progress';
 import { progressStore, setProgress } from '@/entities/route/progressStore';
 import { useStationHash } from './useStationHash';
@@ -24,9 +24,9 @@ describe('useStationHash', () => {
 
     // Индекс станции — это индекс секции в документе сверху (`displayJobs`),
     // а не индекс в хронологическом `jobs`.
-    const expected = displayJobs.findIndex((job) => job.id === 'mplat');
+    const expected = ROUTE_ANCHOR_IDS.indexOf('mplat');
     expect(progressStore.getState().progress).toBe(
-      stationProgress(expected, displayJobs.length),
+      stationProgress(expected, ROUTE_ANCHOR_IDS.length),
     );
   });
 
@@ -36,9 +36,9 @@ describe('useStationHash', () => {
     // location.hash не совпадёт с '#polykod'.
     renderHook(() => useStationHash());
 
-    setProgress(stationProgress(1, displayJobs.length));
+    setProgress(stationProgress(1, ROUTE_ANCHOR_IDS.length));
 
-    expect(window.location.hash).toBe(`#${displayJobs[1]!.id}`);
+    expect(window.location.hash).toBe(`#${ROUTE_ANCHOR_IDS[1]}`);
   });
 
   it('пишет в историю один раз на смену станции, а не на каждое изменение прогресса', () => {
@@ -55,7 +55,7 @@ describe('useStationHash', () => {
     setProgress(0.1);
     expect(replaceStateSpy).not.toHaveBeenCalled();
 
-    setProgress(stationProgress(1, displayJobs.length));
+    setProgress(stationProgress(1, ROUTE_ANCHOR_IDS.length));
     expect(replaceStateSpy).toHaveBeenCalledTimes(1);
   });
 });

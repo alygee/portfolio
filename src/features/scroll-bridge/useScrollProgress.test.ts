@@ -1,13 +1,13 @@
 import { act, renderHook } from '@testing-library/react';
-import { displayJobs } from '@/content';
+import { ROUTE_ANCHOR_IDS } from '@/entities/route/anchors';
 import { stationProgress } from '@/entities/route/progress';
 import { progressStore } from '@/entities/route/progressStore';
 import { useScrollProgress } from './useScrollProgress';
 
-const SECTION_IDS = displayJobs.map((job) => job.id);
+const SECTION_IDS = ROUTE_ANCHOR_IDS;
 const COUNT = SECTION_IDS.length;
-// Секции работ по 1000 px, дальше хвост страницы: «Навыки» и «Образование».
-const SECTION_OFFSETS = [400, 1400, 2400, 3400];
+// Секции работ и «Навыки» по 1000 px, дальше хвост страницы: «Образование».
+const SECTION_OFFSETS = [400, 1400, 2400, 3400, 4400];
 // По умолчанию тесты идут с смонтированной сценой: это ветка, где инерционный
 // скролл вообще допустим.
 const SCENE_MOUNTED = true;

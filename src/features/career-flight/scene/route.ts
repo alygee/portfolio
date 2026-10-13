@@ -1,23 +1,21 @@
 import { CatmullRomCurve3, Vector3 } from 'three';
-import { displayJobs } from '@/content';
+import { HALL_CENTER, HALL_DOCK, ROUTE_WAYPOINTS } from '@/entities/route/anchors';
+import { stationWaypoint } from '@/entities/route/geometry';
+import type { Vec3 } from '@/shared/lib/vec3';
 import { clamp01 } from '@/shared/lib/math';
 
 /** Насколько далеко вперёд по маршруту смотрит камера. */
 export const LOOK_AHEAD = 8;
 
-const STATION_SPACING = 22;
-const STATION_RISE = 2.5;
 const STATION_SIDE_OFFSET = 6;
 /** Ребро куба станции. Рельеф (terrain/) держит площадку под станцией ниже её основания. */
 export const STATION_SIZE = 3;
 
+const toVector = (point: Vec3) => new Vector3(point.x, point.y, point.z);
+
 /** Точка маршрута, с которой видна станция с этим индексом. */
 export function cameraWaypoint(index: number): Vector3 {
-  return new Vector3(
-    Math.sin(index * 0.9) * 3,
-    index * STATION_RISE,
-    -index * STATION_SPACING,
-  );
+  return toVector(stationWaypoint(index));
 }
 
 /** Сама станция стоит сбоку от маршрута, чтобы камера пролетала мимо, а не сквозь. */
@@ -26,9 +24,8 @@ export function stationPosition(index: number): Vector3 {
   return cameraWaypoint(index).add(new Vector3(side * STATION_SIDE_OFFSET, 0, 0));
 }
 
-export function buildRoute(stationCount: number): CatmullRomCurve3 {
-  const points = Array.from({ length: stationCount }, (_, i) => cameraWaypoint(i));
-  return new CatmullRomCurve3(points, false, 'catmullrom', 0.5);
+export function buildRoute(points: readonly Vec3[]): CatmullRomCurve3 {
+  return new CatmullRomCurve3(points.map(toVector), false, 'catmullrom', 0.5);
 }
 
 /**
@@ -38,7 +35,12 @@ export function buildRoute(stationCount: number): CatmullRomCurve3 {
  * рендера, рассчитывает на одну и ту же кривую. Нужна другая геометрия —
  * вызывай `buildRoute` и работай со своим экземпляром, а не правь этот.
  */
-export const route = buildRoute(displayJobs.length);
+export const route = buildRoute(ROUTE_WAYPOINTS);
+
+/** Стыковка зала — конец маршрута; камера в `docked`/`exploring` стоит здесь. */
+export const HALL_DOCK_POINT = toVector(HALL_DOCK);
+/** Центр зала — точка, на которую смотрит камера в `docked`/`exploring`. */
+export const HALL_CENTER_POINT = toVector(HALL_CENTER);
 
 export function progressToCamera(t: number): { position: Vector3; target: Vector3 } {
   const clamped = clamp01(t);

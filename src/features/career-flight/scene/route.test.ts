@@ -1,6 +1,14 @@
 import { jobs } from '@/content';
+import { ROUTE_ANCHOR_IDS } from '@/entities/route/anchors';
 import { stationProgress } from '@/entities/route/progress';
-import { LOOK_AHEAD, cameraWaypoint, progressToCamera, route, stationPosition } from './route';
+import {
+  HALL_DOCK_POINT,
+  LOOK_AHEAD,
+  cameraWaypoint,
+  progressToCamera,
+  route,
+  stationPosition,
+} from './route';
 
 const COUNT = jobs.length;
 
@@ -37,9 +45,14 @@ describe('привязка камеры к станциям', () => {
     // останавливаться у станций, тест упадёт независимо от того, как именно
     // вычисляется stationProgress.
     for (let i = 0; i < COUNT; i += 1) {
-      const { position } = progressToCamera(stationProgress(i, COUNT));
+      const { position } = progressToCamera(stationProgress(i, ROUTE_ANCHOR_IDS.length));
       expect(position.distanceTo(cameraWaypoint(i))).toBeLessThan(0.5);
     }
+  });
+
+  it('в конце маршрута камера у стыковки зала', () => {
+    const { position } = progressToCamera(1);
+    expect(position.distanceTo(HALL_DOCK_POINT)).toBeLessThan(1e-6);
   });
 });
 

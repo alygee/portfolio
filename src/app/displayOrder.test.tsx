@@ -1,5 +1,5 @@
 import { act, render, renderHook } from '@testing-library/react';
-import { displayJobs } from '@/content';
+import { ROUTE_ANCHOR_IDS } from '@/entities/route/anchors';
 import { useStationHash } from '@/features/career-flight/useStationHash';
 import { ResumeDocument } from '@/features/resume-document/ResumeDocument';
 import { progressStore, setProgress } from '@/entities/route/progressStore';
@@ -43,11 +43,11 @@ describe('порядок отображения работ', () => {
     expect(window.location.hash).toBe(`#${ids[ids.length - 1]}`);
   });
 
-  it('порядок секций документа совпадает с порядком отображения из контента', () => {
-    // Связывает фактический DOM с `displayJobs` — тем же списком, по которому
-    // монтируются станции сцены (см. `CareerScene.test.tsx`). Поэтому лишний
-    // или пропавший разворот в HTML-проекции краснит этот тест.
-    expect(documentSectionIds()).toEqual(displayJobs.map((job) => job.id));
+  it('секции-якоря документа совпадают с якорями маршрута', () => {
+    // Связывает фактический DOM с `ROUTE_ANCHOR_IDS` — тем же списком, по
+    // которому строится кривая камеры и пишется хэш. Лишний или пропавший
+    // разворот в HTML-проекции краснит этот тест.
+    expect(documentSectionIds()).toEqual(ROUTE_ANCHOR_IDS);
   });
 
   it('вход по хэшу первой секции ставит начало маршрута, по хэшу последней — конец', () => {

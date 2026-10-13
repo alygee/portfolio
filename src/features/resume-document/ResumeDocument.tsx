@@ -38,8 +38,15 @@ export function ResumeDocument({ now = currentMonthIso() }: { now?: string } = {
         <JobEntry job={job} now={now} key={job.id} />
       ))}
 
-      <h2>Навыки</h2>
-      <SkillList />
+      {/*
+        Последний якорь маршрута (`HALL_ANCHOR_ID`): секция в точке обзора —
+        камера у зала навыков. id совпадает с `ROUTE_ANCHOR_IDS`, это
+        закреплено тестом `displayOrder.test.tsx`.
+      */}
+      <section id="skills" aria-labelledby="skills-heading">
+        <h2 id="skills-heading">Навыки</h2>
+        <SkillList />
+      </section>
 
       <h2>Образование</h2>
       <p>

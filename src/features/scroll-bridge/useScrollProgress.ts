@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import { displayJobs } from '@/content';
+import { ROUTE_ANCHOR_IDS } from '@/entities/route/anchors';
 import { setProgress } from '@/entities/route/progressStore';
 import { readSectionOffsets, sectionsToProgress } from './scrollProgress';
 
-/** Порядок тот же, что у станций маршрута: см. `displayJobs`. */
-const SECTION_IDS = displayJobs.map((job) => job.id);
+/** Порядок тот же, что у путевых точек маршрута: см. `ROUTE_ANCHOR_IDS`. */
+const SECTION_IDS = ROUTE_ANCHOR_IDS;
 
 /**
  * Прогресс маршрута берётся из позиций секций работ в настоящем документе:

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { displayJobs } from '@/content';
+import { ROUTE_ANCHOR_IDS } from '@/entities/route/anchors';
 import { progressStore, setProgress } from '@/entities/route/progressStore';
 // Именно `@/entities/route/progress`, а не `./route`: этот хук зовётся из
 // `App` безусловно, в том числе когда сцена не смонтирована, то есть попадает
@@ -8,8 +8,8 @@ import { progressStore, setProgress } from '@/entities/route/progressStore';
 import { activeStationIndex, stationProgress } from '@/entities/route/progress';
 import { hashToStationIndex, stationIndexToHash } from './stationHash';
 
-/** Порядок тот же, что у секций документа: см. `displayJobs`. */
-const IDS = displayJobs.map((job) => job.id);
+/** Порядок тот же, что у секций документа и путевых точек: см. `ROUTE_ANCHOR_IDS`. */
+const IDS = ROUTE_ANCHOR_IDS;
 
 /**
  * Двусторонняя связь маршрута и URL. Хэш пишется только при смене станции,
