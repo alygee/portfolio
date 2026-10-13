@@ -1,17 +1,21 @@
-import { Canvas, useThree } from '@react-three/fiber';
-import { AdaptiveDpr, PerformanceMonitor } from '@react-three/drei';
-import { Suspense, lazy } from 'react';
-import { useSceneState } from '@/entities/scene-mode/sceneStore';
-import { CareerScene } from '@/features/career-flight/scene/CareerScene';
-import { CAMERA } from '@/features/career-flight/scene/sceneConfig';
-import { SkillHall } from '@/features/skill-galaxy/scene/SkillHall';
-import { SceneReady } from './SceneReady';
+import { Canvas, useThree } from "@react-three/fiber";
+import { AdaptiveDpr, PerformanceMonitor } from "@react-three/drei";
+import { Suspense, lazy } from "react";
+import { useSceneState } from "@/entities/scene-mode/sceneStore";
+import { CareerScene } from "@/features/career-flight/scene/CareerScene";
+import { CAMERA } from "@/features/career-flight/scene/sceneConfig";
+import { HallControls } from "@/features/skill-galaxy/scene/HallControls";
+import { HallOverlay } from "@/features/skill-galaxy/scene/HallOverlay";
+import { SkillHall } from "@/features/skill-galaxy/scene/SkillHall";
+import { SceneReady } from "./SceneReady";
 
 // Только в разработке. Условие проверяется при сборке: в проде
 // import.meta.env.DEV — литерал false, ветка и чанк панели исчезают. Статический
 // импорт под тем же условием не вырезался бы (у leva нет sideEffects: false,
 // спека §3.3).
-const DevPanel = import.meta.env.DEV ? lazy(() => import('@/features/career-flight/scene/debug/DevPanel')) : null;
+const DevPanel = import.meta.env.DEV
+  ? lazy(() => import("@/features/career-flight/scene/debug/DevPanel"))
+  : null;
 
 /**
  * Деградация из спеки §7 работающей цепочкой, а не по отдельности:
@@ -45,11 +49,12 @@ export default function SceneLayer() {
   // Указатель и жесты канвас получает только в режиме исследования зала:
   // в остальное время документ поверх сцены должен оставаться кликабельным,
   // а касание — прокручивать страницу (фаза 1.5; спека зала §5.5).
-  const exploring = useSceneState((state) => state.mode === 'exploring');
+  const exploring = useSceneState((state) => state.mode === "exploring");
 
   return (
-    <div className="scene-layer" aria-hidden="true">
-      {/*
+    <>
+      <div className="scene-layer" aria-hidden="true">
+        {/*
         `pointer-events: none` в CSS у `.scene-layer` не доходит до канваса:
         `@react-three/fiber` сам ставит inline `pointer-events: auto` на свою
         внутреннюю обёртку вокруг `<canvas>`, а инлайн-стиль перебивает
@@ -57,26 +62,30 @@ export default function SceneLayer() {
         R3F даёт переопределить именно эту обёртку, поэтому декларация
         передаётся сюда, а не через className/CSS.
       */}
-      <Canvas
-        dpr={[1, 1.75]}
-        camera={{ ...CAMERA }}
-        style={{
-          pointerEvents: exploring ? 'auto' : 'none',
-          touchAction: exploring ? 'none' : 'auto',
-        }}
-      >
-        <Suspense fallback={null}>
-          <CareerScene />
-          <SkillHall />
-          <SceneReady />
-        </Suspense>
-        <AdaptiveQuality />
-        {DevPanel && (
+        <Canvas
+          dpr={[1, 1.75]}
+          camera={{ ...CAMERA }}
+          style={{
+            pointerEvents: exploring ? "auto" : "none",
+            touchAction: exploring ? "none" : "auto",
+          }}
+        >
           <Suspense fallback={null}>
-            <DevPanel />
+            <CareerScene />
+            <SkillHall />
+            <SceneReady />
           </Suspense>
-        )}
-      </Canvas>
-    </div>
+          <AdaptiveQuality />
+          <HallControls />
+          {DevPanel && (
+            <Suspense fallback={null}>
+              <DevPanel />
+            </Suspense>
+          )}
+        </Canvas>
+      </div>
+      {/* Оверлей — вне `.scene-layer`: у слоя `aria-hidden`, а диалог должен быть доступен. */}
+      <HallOverlay />
+    </>
   );
 }

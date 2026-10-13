@@ -1,11 +1,12 @@
-import { useFrame } from '@react-three/fiber';
+import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { useLayoutEffect, useRef } from 'react';
 import { Color, Matrix4, type InstancedMesh } from 'three';
-import { sceneStore } from '@/entities/scene-mode/sceneStore';
+import { dispatchScene, sceneStore, useSceneState } from '@/entities/scene-mode/sceneStore';
 import type { GraphNode } from '@/entities/skill/graph';
 import type { Vec3 } from '@/shared/lib/vec3';
 import { instanceScale } from './hallScale';
 import { nodeColor } from './hallColors';
+import { CLICK_SLOP, hoverStore } from './hallInteraction';
 
 type Props = {
   nodes: readonly GraphNode[];
@@ -27,6 +28,27 @@ export function NodeInstances({ nodes, positions, radius, shape, name }: Props) 
   // Время пульсации копится из delta кадра, а не из clock: тест с
   // advanceFrames шагает delta детерминированно, а clock идёт по часам.
   const time = useRef(0);
+
+  const exploring = useSceneState((state) => state.mode === 'exploring');
+
+  const onClick = (event: ThreeEvent<MouseEvent>) => {
+    event.stopPropagation();
+    // delta — путь указателя от нажатия до отпускания: после вращения зала
+    // отпускание над узлом не должно его выбирать.
+    if (event.delta > CLICK_SLOP || event.instanceId === undefined) return;
+    dispatchScene({ type: 'select', id: nodes[event.instanceId]!.id });
+  };
+  const onPointerMove = (event: ThreeEvent<PointerEvent>) => {
+    event.stopPropagation();
+    if (event.instanceId === undefined) return;
+    hoverStore.setState({
+      hover: { id: nodes[event.instanceId]!.id, x: event.nativeEvent.clientX, y: event.nativeEvent.clientY },
+    });
+  };
+  const onPointerOut = () => hoverStore.setState({ hover: null });
+  // Вне исследования обработчиков нет вовсе: R3F не бросает лучи в объекты
+  // без обработчиков, а канвас там и так не получает указатель.
+  const handlers = exploring ? { onClick, onPointerMove, onPointerOut } : {};
 
   useLayoutEffect(() => {
     const instanced = mesh.current!;
@@ -67,7 +89,7 @@ export function NodeInstances({ nodes, positions, radius, shape, name }: Props) 
   });
 
   return (
-    <instancedMesh ref={mesh} args={[undefined, undefined, nodes.length]} name={name}>
+    <instancedMesh ref={mesh} args={[undefined, undefined, nodes.length]} name={name} {...handlers}>
       {shape === 'icosahedron' ? <icosahedronGeometry args={[1, 1]} /> : <octahedronGeometry args={[1, 0]} />}
       <meshStandardMaterial roughness={0.4} metalness={0.1} />
     </instancedMesh>
