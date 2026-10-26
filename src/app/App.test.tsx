@@ -18,7 +18,7 @@ describe('App', () => {
     render(<App />);
     const headings = screen.getAllByRole('heading', { level: 1 });
     expect(headings).toHaveLength(1);
-    expect(headings[0]).toHaveTextContent('Альберт Аллагулов');
+    expect(headings[0]).toHaveTextContent('Albert Allagulov');
   });
 
   it('вход по хэшу выигрывает у моста скролла: порядок хуков закреплён', () => {
@@ -50,14 +50,14 @@ describe('App', () => {
       setProgress(1);
       sceneStore.setState({ ...sceneStore.getState(), sceneReady: true });
     });
-    expect(screen.getByRole('button', { name: 'Открыть зал навыков' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open the skill hall' })).toBeInTheDocument();
   });
 
   it('в предрендере кнопки зала нет, даже если на клиенте зал уже готов', () => {
     // Иначе гидрация разойдётся: сервер рендерит начальное состояние стора.
     sceneStore.setState({ ...INITIAL_SCENE_STATE, mode: 'docked', sceneReady: true }, true);
     const html = renderToString(<App />);
-    expect(html).not.toContain('Открыть зал навыков');
+    expect(html).not.toContain('Open the skill hall');
     expect(html).toContain('id="skills"');
   });
 });

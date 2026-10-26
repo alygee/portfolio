@@ -16,7 +16,7 @@ export function ResumeDocument({
   return (
     <article className="resume">
       <header className="resume__header">
-        <h1>Альберт Аллагулов</h1>
+        <h1>Albert Allagulov</h1>
         <p className="resume__role">Senior Frontend Developer</p>
         {/*
           Единая строка, а не смешение текста и {experience}: React
@@ -25,7 +25,7 @@ export function ResumeDocument({
           сплошной текст «Опыт — N лет» на две части.
         */}
         <p className="resume__lead">
-          {`React, TypeScript, highload, UI-архитектура. Опыт — ${experience}. Казань, удалённая работа.`}
+          {`React, TypeScript, high-load, UI architecture. Experience: ${experience}. Kazan, Russia; open to remote work.`}
         </p>
         <ul className="resume__contacts">
           <li>
@@ -39,14 +39,14 @@ export function ResumeDocument({
         </ul>
       </header>
 
-      <h2>Опыт работы</h2>
+      <h2>Work experience</h2>
       {displayJobs.map((job) => (
         <JobEntry job={job} now={now} key={job.id} />
       ))}
 
       {projects.length > 0 && (
         <section className="projects" aria-labelledby="projects-heading">
-          <h2 id="projects-heading">ML-проекты</h2>
+          <h2 id="projects-heading">ML projects</h2>
           {projects.map((project) => (
             <ProjectEntry project={project} key={project.id} />
           ))}
@@ -59,15 +59,15 @@ export function ResumeDocument({
         закреплено тестом `displayOrder.test.tsx`.
       */}
       <section id="skills" aria-labelledby="skills-heading">
-        <h2 id="skills-heading">Навыки</h2>
+        <h2 id="skills-heading">Skills</h2>
         {skillsAction}
         <SkillList />
       </section>
 
-      <h2>Образование</h2>
+      <h2>Education</h2>
       <p>
-        Омский государственный университет им. Ф. М. Достоевского, физический
-        факультет, радиофизика, 2015.
+        Dostoevsky Omsk State University, Faculty of Physics, radiophysics,
+        2015.
       </p>
     </article>
   );

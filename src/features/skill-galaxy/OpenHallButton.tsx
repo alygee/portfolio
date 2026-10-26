@@ -27,7 +27,7 @@ export function OpenHallButton() {
       className="open-hall"
       onClick={() => dispatchScene({ type: 'openHall' })}
     >
-      Открыть зал навыков
+      Open the skill hall
     </button>
   );
 }

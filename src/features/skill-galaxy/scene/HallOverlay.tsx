@@ -72,18 +72,18 @@ export function HallOverlay() {
   return (
     <div className="hall-overlay" role="dialog" aria-modal="true" aria-labelledby="hall-title">
       <header className="hall-overlay__panel">
-        <h2 id="hall-title">Зал навыков</h2>
+        <h2 id="hall-title">Skill hall</h2>
         <p className="hall-overlay__hint">
-          Перетаскивайте, чтобы вращать. ← → — перебрать узлы. Esc — выйти.
+          Drag to rotate. ← → to cycle nodes. Esc to exit.
         </p>
         <button ref={closeButton} type="button" onClick={() => dispatchScene({ type: 'closeHall' })}>
-          Закрыть
+          Close
         </button>
       </header>
 
-      <section className="hall-overlay__panel hall-card" aria-label="Выбранный узел" aria-live="polite">
+      <section className="hall-overlay__panel hall-card" aria-label="Selected node" aria-live="polite">
         {details === null ? (
-          <p>Выберите узел — щелчком или стрелками.</p>
+          <p>Select a node by clicking or with the arrow keys.</p>
         ) : (
           <>
             <h3>{details.title}</h3>
@@ -112,7 +112,7 @@ export function HallOverlay() {
             )}
             {details.bridges.length > 0 && (
               <>
-                <h4>Что переносится в ML</h4>
+                <h4>What carries over to ML</h4>
                 <ul>
                   {details.bridges.map((bridge) => (
                     <li key={bridge.pair}>

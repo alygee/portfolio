@@ -16,7 +16,7 @@ export function ProjectEntry({ project }: { project: Project }) {
         </a>
       </h3>
       <p className="project__meta">
-        {`${project.kind === 'kaggle' ? 'Kaggle' : 'Проект'} · ${formatIsoMonth(project.date)}`}
+        {`${project.kind === 'kaggle' ? 'Kaggle' : 'Project'} · ${formatIsoMonth(project.date)}`}
       </p>
       <p>{project.summary}</p>
       <ul className="job__bullets">

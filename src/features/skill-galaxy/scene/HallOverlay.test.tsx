@@ -7,7 +7,7 @@ import { HallOverlay } from './HallOverlay';
 
 const explore = () =>
   act(() => sceneStore.setState({ ...INITIAL_SCENE_STATE, mode: 'exploring', sceneReady: true }, true));
-const card = () => screen.getByRole('region', { name: 'Выбранный узел' });
+const card = () => screen.getByRole('region', { name: 'Selected node' });
 
 beforeEach(() => {
   sceneStore.setState(INITIAL_SCENE_STATE, true);
@@ -24,14 +24,14 @@ describe('HallOverlay', () => {
   it('диалог с именем, фокус — на «Закрыть»', () => {
     explore();
     render(<HallOverlay />);
-    expect(screen.getByRole('dialog', { name: 'Зал навыков' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Закрыть' })).toHaveFocus();
+    expect(screen.getByRole('dialog', { name: 'Skill hall' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus();
   });
 
   it('«Закрыть» закрывает зал', () => {
     explore();
     render(<HallOverlay />);
-    fireEvent.click(screen.getByRole('button', { name: 'Закрыть' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(sceneStore.getState().mode).toBe('docked');
   });
 
@@ -60,8 +60,8 @@ describe('HallOverlay', () => {
     act(() => dispatchScene({ type: 'select', id: 'postgres' }));
     render(<HallOverlay />);
     expect(within(card()).getByRole('heading', { name: 'PostgreSQL' })).toBeInTheDocument();
-    expect(card()).toHaveTextContent('применён');
-    expect(within(card()).getByRole('link', { name: 'Мобильная платформа' })).toHaveAttribute('href', '#mplat');
+    expect(card()).toHaveTextContent('applied');
+    expect(within(card()).getByRole('link', { name: 'Mobile Platform' })).toHaveAttribute('href', '#mplat');
     expect(card()).toHaveTextContent('PostgreSQL → pandas');
   });
 
@@ -74,7 +74,7 @@ describe('HallOverlay', () => {
     act(() => dispatchScene({ type: 'select', id: 'postgres' }));
     render(<HallOverlay />);
 
-    fireEvent.click(within(card()).getByRole('link', { name: 'Мобильная платформа' }));
+    fireEvent.click(within(card()).getByRole('link', { name: 'Mobile Platform' }));
     expect(sceneStore.getState().mode).toBe('docked');
     // useHallDocument при закрытии делает history.back(); здесь его нет —
     // имитируем событие, которое пришлёт браузер.

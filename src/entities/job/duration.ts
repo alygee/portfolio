@@ -15,22 +15,17 @@ export function jobMonths(period: Period, now: string): number {
   return inclusiveMonths(period.start, period.end ?? now);
 }
 
-function plural(n: number, forms: [string, string, string]): string {
-  const mod100 = n % 100;
-  if (mod100 >= 11 && mod100 <= 14) return forms[2];
-  const mod10 = n % 10;
-  if (mod10 === 1) return forms[0];
-  if (mod10 >= 2 && mod10 <= 4) return forms[1];
-  return forms[2];
+function plural(n: number, forms: [string, string]): string {
+  return n === 1 ? forms[0] : forms[1];
 }
 
 export function formatMonths(total: number): string {
   const years = Math.floor(total / 12);
   const months = total % 12;
   const parts: string[] = [];
-  if (years > 0) parts.push(`${years} ${plural(years, ['год', 'года', 'лет'])}`);
+  if (years > 0) parts.push(`${years} ${plural(years, ['year', 'years'])}`);
   if (months > 0 || years === 0) {
-    parts.push(`${months} ${plural(months, ['месяц', 'месяца', 'месяцев'])}`);
+    parts.push(`${months} ${plural(months, ['month', 'months'])}`);
   }
   return parts.join(' ');
 }

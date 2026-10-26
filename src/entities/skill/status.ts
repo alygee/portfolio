@@ -3,9 +3,9 @@ import type { Skill } from '@/content';
 export type SkillStatus = 'applied' | 'learning' | 'planned';
 
 export const STATUS_LABELS: Record<SkillStatus, string> = {
-  applied: 'применён',
-  learning: 'изучаю',
-  planned: 'в плане',
+  applied: 'applied',
+  learning: 'learning',
+  planned: 'planned',
 };
 
 type Evidence = { readonly stack: readonly string[] };

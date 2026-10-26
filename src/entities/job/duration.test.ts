@@ -35,29 +35,29 @@ describe('jobMonths', () => {
 });
 
 describe('formatMonths', () => {
-  it('склоняет месяцы по-русски', () => {
-    expect(formatMonths(1)).toBe('1 месяц');
-    expect(formatMonths(2)).toBe('2 месяца');
-    expect(formatMonths(5)).toBe('5 месяцев');
-    expect(formatMonths(9)).toBe('9 месяцев');
-    expect(formatMonths(11)).toBe('11 месяцев');
+  it('pluralizes months', () => {
+    expect(formatMonths(1)).toBe('1 month');
+    expect(formatMonths(2)).toBe('2 months');
+    expect(formatMonths(5)).toBe('5 months');
+    expect(formatMonths(9)).toBe('9 months');
+    expect(formatMonths(11)).toBe('11 months');
   });
 
-  it('склоняет годы по-русски', () => {
-    expect(formatMonths(12)).toBe('1 год');
-    expect(formatMonths(24)).toBe('2 года');
-    expect(formatMonths(60)).toBe('5 лет');
+  it('pluralizes years', () => {
+    expect(formatMonths(12)).toBe('1 year');
+    expect(formatMonths(24)).toBe('2 years');
+    expect(formatMonths(60)).toBe('5 years');
   });
 
   it('соединяет годы и месяцы', () => {
-    expect(formatMonths(13)).toBe('1 год 1 месяц');
-    expect(formatMonths(15)).toBe('1 год 3 месяца');
-    expect(formatMonths(83)).toBe('6 лет 11 месяцев');
-    expect(formatMonths(117)).toBe('9 лет 9 месяцев');
+    expect(formatMonths(13)).toBe('1 year 1 month');
+    expect(formatMonths(15)).toBe('1 year 3 months');
+    expect(formatMonths(83)).toBe('6 years 11 months');
+    expect(formatMonths(117)).toBe('9 years 9 months');
   });
 
   it('нулевой срок отдаёт нулевые месяцы', () => {
-    expect(formatMonths(0)).toBe('0 месяцев');
+    expect(formatMonths(0)).toBe('0 months');
   });
 });
 
@@ -80,7 +80,7 @@ describe('totalExperienceMonths', () => {
 
   it('на реальных данных резюме даёт 9 лет 9 месяцев', () => {
     expect(totalExperienceMonths(jobs, NOW)).toBe(117);
-    expect(formatMonths(totalExperienceMonths(jobs, NOW))).toBe('9 лет 9 месяцев');
+    expect(formatMonths(totalExperienceMonths(jobs, NOW))).toBe('9 years 9 months');
   });
 
   it('периоды соприкасаются, но не перекрываются', () => {

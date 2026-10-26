@@ -27,7 +27,7 @@ export function describeNode(id: string, graph: SkillGraph = hallGraph): NodeDet
     return {
       title: node.label,
       meta: `${DOMAIN_LABELS[node.domain]} · ${CATEGORY_LABELS[node.category]} · ${STATUS_LABELS[node.status]}`,
-      linksTitle: 'Где применён',
+      linksTitle: 'Applied in',
       links: hubs.map((hub) => ({ id: hub.id, label: hub.label, kind: hub.kind, href: hub.href })),
       bridges: bridges
         .filter((bridge) => bridge.from === id || bridge.to === id)
@@ -37,8 +37,8 @@ export function describeNode(id: string, graph: SkillGraph = hallGraph): NodeDet
 
   return {
     title: node.label,
-    meta: node.kind === 'job' ? 'Работа' : 'ML-проект',
-    linksTitle: 'Навыки',
+    meta: node.kind === 'job' ? 'Job' : 'ML project',
+    linksTitle: 'Skills',
     links: graph.edges
       .filter((edge) => edge.kind === 'applied' && edge.from === id)
       .map((edge) => ({ id: edge.to, label: labelOf(edge.to), kind: 'skill' as const, href: null })),

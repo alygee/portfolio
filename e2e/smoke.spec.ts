@@ -25,6 +25,14 @@ const SAMPLE_STEP = 4 * 977;
  * тесты, см. final-fix-report.md.
  */
 const FRAME_DIFF_THRESHOLD = 24;
+// Зал — тонкая сетка линий и точек на тёмном фоне: в редкой выборке
+// (SAMPLE_STEP) на него приходятся единицы сэмплов, поэтому поворот сравниваем
+// по плотной (каждый 13-й пиксель).
+const DENSE_STEP = 4 * 13;
+// Измерено (desktop 1280x720 / mobile Pixel 7): поворот меняет 3,7% / 9,4%
+// плотных сэмплов, шум между двумя успокоившимися кадрами — до 0,03%. Порог 1%:
+// запас ≥3× над порогом и ≥30× над шумом.
+const DRAG_FLOOR = 0.01;
 
 /**
  * Снимает кадр канваса сцены скриншотом Playwright, а не чтением WebGL
@@ -131,10 +139,10 @@ async function withHiddenResumeText<T>(page: Page, run: () => Promise<T>): Promi
  * никогда (пульсирует «изучаю»), поэтому «изменился ли кадр» здесь — не
  * framesEqual, а сравнение доли изменившихся точек с фоном пульсации.
  */
-function changedFraction(a: SceneFrame, b: SceneFrame): number {
+function changedFraction(a: SceneFrame, b: SceneFrame, step = SAMPLE_STEP): number {
   let changed = 0;
   let total = 0;
-  for (let i = 0; i < a.length; i += SAMPLE_STEP) {
+  for (let i = 0; i < a.length; i += step) {
     total += 1;
     const diff =
       Math.abs(a.data[i]! - b.data[i]!) +
@@ -155,7 +163,7 @@ async function dockAtHall(page: Page) {
   await page.goto('/');
   await expect(page.locator('.scene-layer canvas')).toHaveCount(1, { timeout: 15_000 });
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  const button = page.getByRole('button', { name: 'Открыть зал навыков' });
+  const button = page.getByRole('button', { name: 'Open the skill hall' });
   await expect(button).toBeVisible({ timeout: 20_000 });
   await expect(button).toBeInViewport();
   return button;
@@ -164,7 +172,7 @@ async function dockAtHall(page: Page) {
 async function openHall(page: Page) {
   const button = await dockAtHall(page);
   await button.click();
-  await expect(page.getByRole('dialog', { name: 'Зал навыков' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Skill hall' })).toBeVisible();
   return button;
 }
 
@@ -190,11 +198,11 @@ test('резюме читается при отключённом JavaScript', a
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Аллагулов/);
-  await expect(page.getByText('ГИСГИС')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Allagulov/);
+  await expect(page.getByText('GISGIS')).toBeVisible();
   // Стаж считается от даты сборки — точное число месяцев меняется каждый
   // месяц, поэтому проверяем шаблон, а не конкретное значение.
-  await expect(page.getByText(/Опыт — \d+ (год|года|лет)/)).toBeVisible();
+  await expect(page.getByText(/Experience: \d+ years?/)).toBeVisible();
   await context.close();
 });
 
@@ -531,7 +539,7 @@ test('кнопка зала: нет WebGL — нет кнопки, в Chromium �
     return (canvas.getContext('webgl2') ?? canvas.getContext('webgl')) !== null;
   });
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  const button = page.getByRole('button', { name: 'Открыть зал навыков' });
+  const button = page.getByRole('button', { name: 'Open the skill hall' });
   if (!hasWebGL) {
     await page.waitForTimeout(1500);
     await expect(button).toHaveCount(0);
@@ -542,8 +550,8 @@ test('кнопка зала: нет WebGL — нет кнопки, в Chromium �
   }
   const shown = await button.isVisible();
   testInfo.annotations.push({ type: 'webgl', description: `${hasWebGL}, кнопка: ${shown}` });
-  await expect(page.locator('#skills')).toContainText('изучаю');
-  await expect(page.locator('#skills')).toContainText('Что я переношу в ML');
+  await expect(page.locator('#skills')).toContainText('learning');
+  await expect(page.locator('#skills')).toContainText('What I bring to ML');
 });
 
 test('без WebGL нет канваса и кнопки зала, а раздел навыков полон', async ({ page }) => {
@@ -560,10 +568,10 @@ test('без WebGL нет канваса и кнопки зала, а разде
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   await page.waitForTimeout(2000); // ограниченное ожидание: сцена, если бы монтировалась, успела бы
   await expect(page.locator('canvas')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Открыть зал навыков' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Open the skill hall' })).toHaveCount(0);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  await expect(page.locator('#skills')).toContainText('изучаю');
-  await expect(page.locator('#skills')).toContainText('Что я переношу в ML');
+  await expect(page.locator('#skills')).toContainText('learning');
+  await expect(page.locator('#skills')).toContainText('What I bring to ML');
 });
 
 test('зал: документ гаснет, канвас ловит указатель, прокрутка стоит; Esc всё возвращает', { tag: '@scene' }, async ({ page }) => {
@@ -578,7 +586,7 @@ test('зал: документ гаснет, канвас ловит указа�
   await expect(canvasWrapper).toHaveCSS('touch-action', 'auto');
 
   await button.click();
-  await expect(page.getByRole('button', { name: 'Закрыть' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Close' })).toBeFocused();
   // Щелчок по кнопке, уже лежащей во вьюпорте, не должен сдвигать документ.
   expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
   await expect(page.locator('main')).toHaveCSS('visibility', 'hidden', { timeout: 15_000 });
@@ -614,7 +622,7 @@ for (const path of ['Esc', 'кнопка «Закрыть»', '«назад»'] 
     const scrollBefore = await page.evaluate(() => window.scrollY);
     if (path === 'Esc') await page.keyboard.press('Escape');
     else if (path === '«назад»') await page.goBack();
-    else await page.getByRole('button', { name: 'Закрыть' }).click();
+    else await page.getByRole('button', { name: 'Close' }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeCloseTo(scrollBefore, 0);
     await expectDocumentUsable(page);
@@ -630,7 +638,7 @@ test('щелчок по узлу открывает его карточку', { 
   test.setTimeout(120_000);
   await openHall(page);
   const box = (await page.locator('.scene-layer canvas').boundingBox())!;
-  const title = page.getByRole('region', { name: 'Выбранный узел' }).getByRole('heading', { level: 3 });
+  const title = page.getByRole('region', { name: 'Selected node' }).getByRole('heading', { level: 3 });
   await expect(title).toHaveCount(0);
   let found = false;
   for (let row = 9; row <= 21 && !found; row += 1) {
@@ -647,7 +655,7 @@ test('стрелки перебирают узлы, ссылка «где при
   test.setTimeout(120_000);
   await openHall(page);
   await page.keyboard.press('ArrowRight');
-  const card = page.getByRole('region', { name: 'Выбранный узел' });
+  const card = page.getByRole('region', { name: 'Selected node' });
   await expect(card.getByRole('heading', { level: 3 })).toHaveText('TypeScript');
   const link = card.getByRole('link').first();
   const href = (await link.getAttribute('href'))!;
@@ -684,28 +692,58 @@ test('у стыковки зал нарисован и вращается', { ta
   expect(framesEqual(first, second), 'кадр у стыковки не меняется — зал не вращается или не нарисован').toBe(false);
 });
 
+/**
+ * Ждёт, пока кадр зала успокоится: два соседних снимка (через 500 мс) отличаются
+ * меньше чем на 1% сэмплов — смена разрешения AdaptiveDpr закончилась, инерция
+ * погасла. Возвращает оба снимка: пара нужна, чтобы замаскировать пульсацию.
+ */
+async function settledPair(page: Page): Promise<{ previous: SceneFrame; frame: SceneFrame }> {
+  let previous = await readSceneFrame(page);
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    await page.waitForTimeout(500);
+    const frame = await readSceneFrame(page);
+    if (changedFraction(previous, frame, DENSE_STEP) < 0.01) return { previous, frame };
+    previous = frame;
+  }
+  throw new Error('кадр зала не успокоился за отведённое время');
+}
+
+/** Доля изменившихся сэмплов между a и b, не считая тех, что меняются и сами (mask). */
+function maskedChangedFraction(a: SceneFrame, b: SceneFrame, mask: [SceneFrame, SceneFrame]): number {
+  let changed = 0;
+  let total = 0;
+  for (let i = 0; i < a.length; i += DENSE_STEP) {
+    const delta = (x: SceneFrame, y: SceneFrame) =>
+      Math.abs(x.data[i]! - y.data[i]!) +
+      Math.abs(x.data[i + 1]! - y.data[i + 1]!) +
+      Math.abs(x.data[i + 2]! - y.data[i + 2]!);
+    if (delta(mask[0], mask[1]) > FRAME_DIFF_THRESHOLD) continue; // пульсация «изучаю»
+    total += 1;
+    if (delta(a, b) > FRAME_DIFF_THRESHOLD) changed += 1;
+  }
+  return changed / total;
+}
+
 test('перетаскивание вращает зал', { tag: '@scene' }, async ({ page }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(180_000);
   await openHall(page);
   const box = (await page.locator('.scene-layer canvas').boundingBox())!;
-  await page.waitForTimeout(2000);
-  const before = await readSceneFrame(page);
-  await page.waitForTimeout(1000);
-  const idle = await readSceneFrame(page);
-  const background = changedFraction(before, idle); // только пульсация «изучаю»
+  const { previous, frame: idle } = await settledPair(page);
 
+  // Поворот — dragGain 0,006 рад/пкс (плюс инерция после отпускания). Шире
+  // нельзя: ≈1000 пкс — полный оборот, и кадр совпал бы с исходным (так и
+  // получались нули). Здесь 240 пкс ≈ 1,4 рад + инерция; на узком экране — 60% ширины.
+  const span = Math.min(240, box.width * 0.6);
   const y = box.y + box.height / 2;
-  await page.mouse.move(box.x + box.width * 0.3, y);
+  const x0 = box.x + (box.width - span) / 2;
+  await page.mouse.move(x0, y);
   await page.mouse.down();
-  await page.mouse.move(box.x + box.width * 0.7, y, { steps: 12 });
+  await page.mouse.move(x0 + span, y, { steps: 16 });
   await page.mouse.up();
-  await page.waitForTimeout(1500); // инерция гаснет (SPIN.damping = 3/с)
-  const after = await readSceneFrame(page);
+  const { frame: after } = await settledPair(page);
 
-  // Зал занимает часть широкого десктопного кадра: на практике поворот
-  // меняет 4% сэмплов на desktop и 10% на mobile при фоне 0, поэтому порог 2%; под нагрузкой фон дорастает до 6% (AdaptiveDpr
-  // меняет разрешение), поэтому множитель фона 1,5, а не 3.
-  expect(changedFraction(idle, after)).toBeGreaterThan(Math.max(0.02, background * 1.5));
+  const fraction = maskedChangedFraction(idle, after, [previous, idle]);
+  expect(fraction).toBeGreaterThan(DRAG_FLOOR);
 });
 
 test('касание вне зала не перехватывается канвасом (mobile)', { tag: '@scene' }, async ({ page }, testInfo) => {

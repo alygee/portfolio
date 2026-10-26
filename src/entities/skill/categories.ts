@@ -1,20 +1,20 @@
 import type { SkillCategory } from '@/content';
 
 export const CATEGORY_LABELS: Record<SkillCategory, string> = {
-  language: 'Языки',
-  framework: 'Фреймворки и UI',
-  state: 'Состояние',
-  build: 'Сборка',
-  testing: 'Тестирование',
-  backend: 'Бэкенд',
-  database: 'Базы данных',
-  geo: 'Картография',
-  infra: 'Инфраструктура',
-  'ml-data': 'Python и данные',
-  'ml-classic': 'Классический ML',
+  language: 'Languages',
+  framework: 'Frameworks & UI',
+  state: 'State',
+  build: 'Build',
+  testing: 'Testing',
+  backend: 'Backend',
+  database: 'Databases',
+  geo: 'Mapping',
+  infra: 'Infrastructure',
+  'ml-data': 'Python & data',
+  'ml-classic': 'Classic ML',
   'ml-deep': 'Deep Learning',
   llm: 'LLM',
-  mlops: 'MLOps и сервинг',
+  mlops: 'MLOps & serving',
 };
 
 export const CATEGORY_ORDER: readonly SkillCategory[] = [
@@ -58,4 +58,4 @@ export const CATEGORY_DOMAIN: Record<SkillCategory, Domain> = {
   mlops: 'ml',
 };
 
-export const DOMAIN_LABELS: Record<Domain, string> = { web: 'Веб', ml: 'ML' };
+export const DOMAIN_LABELS: Record<Domain, string> = { web: 'Web', ml: 'ML' };

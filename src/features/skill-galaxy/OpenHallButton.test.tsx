@@ -5,7 +5,7 @@ import { OpenHallButton } from './OpenHallButton';
 
 const setScene = (patch: Partial<SceneState>) =>
   act(() => sceneStore.setState({ ...INITIAL_SCENE_STATE, ...patch }, true));
-const button = () => screen.queryByRole('button', { name: 'Открыть зал навыков' });
+const button = () => screen.queryByRole('button', { name: 'Open the skill hall' });
 
 beforeEach(() => sceneStore.setState(INITIAL_SCENE_STATE, true));
 

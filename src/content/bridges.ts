@@ -8,31 +8,31 @@ export const bridges: readonly Bridge[] = [
   {
     from: 'postgres',
     to: 'pandas',
-    why: 'Агрегации и джойны над большими таблицами предбиллинга — те же операции, что в pandas.',
+    why: 'Aggregations and joins over large pre-billing tables are the same operations as in pandas.',
   },
   {
     from: 'docker',
     to: 'fastapi',
-    why: 'Упаковывал и выкатывал сервисы в контейнерах — модель за API выкатывается так же.',
+    why: 'I packaged and shipped services in containers — a model behind an API ships the same way.',
   },
   {
     from: 'ci',
     to: 'mlflow',
-    why: 'Строил пайплайны релизов; воспроизводимость экспериментов — та же дисциплина.',
+    why: 'I built release pipelines; reproducible experiments take the same discipline.',
   },
   {
     from: 'nodejs',
     to: 'vllm',
-    why: 'Сервисы под нагрузкой: задержка, очереди, батчинг — ядро сервинга LLM.',
+    why: 'Services under load — latency, queues, batching — are the core of LLM serving.',
   },
   {
     from: 'typescript',
     to: 'python',
-    why: 'Строгая типизация в большом коде переносится в type hints и mypy.',
+    why: 'Strict typing in a large codebase carries over to type hints and mypy.',
   },
   {
     from: 'jest',
     to: 'evals',
-    why: 'Внедрял тесты, снизившие баги на продакшене на 30%; evals — тесты для моделей.',
+    why: 'I introduced tests that cut production bugs by 30%; evals are tests for models.',
   },
 ];

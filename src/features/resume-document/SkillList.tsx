@@ -58,7 +58,7 @@ export function SkillList() {
         </div>
       ))}
 
-      <h3>Что я переношу в ML</h3>
+      <h3>What I bring to ML</h3>
       <ul className="bridges">
         {bridges.map((bridge) => (
           <li key={`${bridge.from}-${bridge.to}`}>

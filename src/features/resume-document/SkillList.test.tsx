@@ -13,13 +13,13 @@ describe('SkillList', () => {
     const ml = screen.getByRole('heading', { level: 3, name: 'ML' }).closest('.skills-domain')!;
     expect(within(ml as HTMLElement).getByText('PyTorch')).toBeInTheDocument();
     expect(within(ml as HTMLElement).queryByText('React')).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 3, name: 'Веб' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'Web' })).toBeInTheDocument();
   });
 
   it('статус написан текстом, а не только цветом', () => {
     render(<SkillList />);
-    expect(item('Python')).toHaveTextContent('изучаю');
-    expect(item('ONNX')).toHaveTextContent('в плане');
+    expect(item('Python')).toHaveTextContent('learning');
+    expect(item('ONNX')).toHaveTextContent('planned');
   });
 
   it('у применённого навыка метки нет — это умолчание', () => {
@@ -29,9 +29,9 @@ describe('SkillList', () => {
 
   it('мосты: пара навыков и обоснование', () => {
     render(<SkillList />);
-    expect(screen.getByRole('heading', { level: 3, name: 'Что я переношу в ML' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'What I bring to ML' })).toBeInTheDocument();
     const bridge = screen.getByText('PostgreSQL → pandas').closest('li')!;
-    expect(bridge).toHaveTextContent('предбиллинга');
+    expect(bridge).toHaveTextContent('pre-billing');
   });
 
   it('в стыковке наведение на навык подсвечивает его в зале, уход снимает', () => {

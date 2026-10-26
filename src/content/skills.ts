@@ -71,7 +71,7 @@ export const skills = [
   { id: 'pytorch', label: 'PyTorch', category: 'ml-deep', intent: 'planned' },
   { id: 'transformers', label: 'Hugging Face Transformers', category: 'ml-deep', intent: 'planned' },
   { id: 'rag', label: 'RAG', category: 'llm', intent: 'planned' },
-  { id: 'vector-db', label: 'Векторные БД', category: 'llm', intent: 'planned' },
+  { id: 'vector-db', label: 'Vector DBs', category: 'llm', intent: 'planned' },
   { id: 'lora', label: 'LoRA', category: 'llm', intent: 'planned' },
   { id: 'evals', label: 'Evals', category: 'llm', intent: 'planned' },
   { id: 'fastapi', label: 'FastAPI', category: 'mlops', intent: 'planned' },

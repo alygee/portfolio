@@ -47,8 +47,8 @@ describe('App при падении 3D-слоя', () => {
 
     expect(brokenScene.renders).toBeGreaterThan(0);
     const heading = screen.getByRole('heading', { level: 1 });
-    expect(heading).toHaveTextContent('Альберт Аллагулов');
-    expect(screen.getByText(/Образование/)).toBeInTheDocument();
+    expect(heading).toHaveTextContent('Albert Allagulov');
+    expect(screen.getByText(/Education/)).toBeInTheDocument();
   });
 
   it('падение сцены в открытом зале возвращает документ', async () => {

@@ -2,8 +2,8 @@ import type { Job } from '@/content';
 import { formatMonths, jobMonths } from '@/entities/job/duration';
 
 const MONTH_NAMES = [
-  'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
-  'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
 ] as const;
 
 export function formatIsoMonth(iso: string): string {
@@ -14,7 +14,7 @@ export function formatIsoMonth(iso: string): string {
 
 export function JobEntry({ job, now }: { job: Job; now: string }) {
   const period = `${formatIsoMonth(job.start)} — ${
-    job.end === null ? 'настоящее время' : formatIsoMonth(job.end)
+    job.end === null ? 'present' : formatIsoMonth(job.end)
   }`;
 
   return (
